@@ -1,0 +1,15 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+  "name": "dev.praxec/elicitation",
+  "description": "Requirements elicitation MCP server — structured interview sessions, falsification-based discovery.",
+  "version": "0.0.1",
+  "repository": { "url": "https://github.com/praxec/elicitation", "source": "github" },
+  "packages": [
+    {
+      "registryType": "oci",
+      "identifier": "ghcr.io/praxec/elicitation",
+      "version": "0.0.1",
+      "transport": { "type": "stdio" }
+    }
+  ]
+}
