@@ -1,0 +1,22 @@
+[package]
+name = "elicitation-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Deterministic, offline kernel for structured discovery interviews modeled as an alignment mechanism: an event-sourced claim ledger where claims are hypotheses, standing is computed, contradictions are detected structurally, and a plan-readiness gate reports whether the spec survived falsification."
+keywords = ["elicitation", "requirements", "discovery", "claims", "falsification"]
+categories = ["development-tools"]
+
+[lib]
+name = "elicitation_core"
+path = "src/lib.rs"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = "2"
+
+[dev-dependencies]
+tempfile = "3"

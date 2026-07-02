@@ -1,0 +1,33 @@
+[package]
+name = "elicitation-session"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Deterministic session core for structured discovery interviews: state machine, poka-yoke guards, and an in-memory store."
+
+[lib]
+name = "elicitation_session"
+path = "src/lib.rs"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+rusqlite = { version = "0.31", features = ["bundled"] }
+tokio = { workspace = true }
+
+[workspace]
+resolver = "2"
+members = [".", "crates/elicitation-core", "crates/elicitation"]
+
+[workspace.package]
+version = "0.0.1"
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/praxec/elicitation"
+authors = ["Matthew Cochran <matthew@cochranweb.com>"]
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "sync", "macros"] }
