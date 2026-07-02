@@ -37,6 +37,7 @@ jobs:
         uses: taiki-e/upload-rust-binary-action@v1
         with:
           bin: elicitation
+          manifest-path: crates/elicitation/Cargo.toml
           target: ${{ matrix.target }}
           archive: elicitation-${{ matrix.target }}
           token: ${{ secrets.GITHUB_TOKEN }}

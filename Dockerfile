@@ -3,7 +3,7 @@ FROM rust:1-slim AS build
 WORKDIR /src
 RUN apt-get update && apt-get install -y --no-install-recommends pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
 COPY . .
-RUN cargo build --release --bin elicitation && cp target/release/elicitation /elicitation
+RUN cargo build --release -p elicitation && cp target/release/elicitation /elicitation
 
 FROM debian:stable-slim
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/* \
