@@ -1,8 +1,8 @@
 //! Recovery engine — loads all non-closed sessions and validates their
 //! state-machine invariants; quarantines (but never panics on) invalid ones.
 
-use crate::session::state::{SessionState, SessionStatus};
 use crate::session::schema::QuestionKind;
+use crate::session::state::{SessionState, SessionStatus};
 use crate::session::store::{SessionStore, StoreError};
 
 // ── RecoveryReport ────────────────────────────────────────────────────────────
@@ -86,10 +86,9 @@ impl RecoveryEngine {
         let ids = match store.list_active() {
             Ok(ids) => ids,
             Err(e) => {
-                report.quarantined.push((
-                    "<store>".to_string(),
-                    format!("list_active failed: {e}"),
-                ));
+                report
+                    .quarantined
+                    .push(("<store>".to_string(), format!("list_active failed: {e}")));
                 return report;
             }
         };

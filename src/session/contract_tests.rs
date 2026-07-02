@@ -88,18 +88,15 @@ mod contract_tests {
         }];
         let err = append_questions(&mut s, only_single_choice).unwrap_err();
         assert!(
-            matches!(
-                err,
-                crate::session::machine::SmError::BatchMissingOpenText
-            ),
+            matches!(err, crate::session::machine::SmError::BatchMissingOpenText),
             "batch_open_text: expected BatchMissingOpenText"
         );
     }
 
     // ── poka-yoke 3: token single-use ─────────────────────────────────────────
     fn contract_token_single_use<S: SessionStore>(store: &S) {
-        use crate::session::state::{Answer, SingleUseToken};
         use crate::session::machine::append_answer;
+        use crate::session::state::{Answer, SingleUseToken};
 
         let mut state = SessionState::new();
         let tok = SingleUseToken::new();
@@ -108,7 +105,10 @@ mod contract_tests {
         store.save("tu_sess", state).unwrap();
 
         let mut s = store.load("tu_sess").unwrap();
-        let a = Answer { question_id: "q1".to_string(), value: "v".to_string() };
+        let a = Answer {
+            question_id: "q1".to_string(),
+            value: "v".to_string(),
+        };
         let _ = append_answer(&mut s, a.clone(), &raw);
         assert!(s.token.is_none(), "token must be consumed");
 
@@ -139,10 +139,7 @@ mod contract_tests {
         request_confirm(&mut s).unwrap();
         let err = confirm(&mut s, false).unwrap_err();
         assert!(
-            matches!(
-                err,
-                crate::session::machine::SmError::RevisionCapExceeded
-            ),
+            matches!(err, crate::session::machine::SmError::RevisionCapExceeded),
             "revision_cap: expected RevisionCapExceeded"
         );
     }
@@ -158,10 +155,7 @@ mod contract_tests {
         let extra = vec![open_q("overflow")];
         let err = append_questions(&mut s2, extra).unwrap_err();
         assert!(
-            matches!(
-                err,
-                crate::session::machine::SmError::QueueDepthExceeded
-            ),
+            matches!(err, crate::session::machine::SmError::QueueDepthExceeded),
             "queue_cap: expected QueueDepthExceeded"
         );
         let _ = s; // silence unused warning
@@ -278,8 +272,11 @@ mod contract_tests {
             report.recovered.contains(&"valid_sess".to_string()),
             "valid session must be recovered"
         );
-        let quarantined_ids: Vec<&str> =
-            report.quarantined.iter().map(|(id, _)| id.as_str()).collect();
+        let quarantined_ids: Vec<&str> = report
+            .quarantined
+            .iter()
+            .map(|(id, _)| id.as_str())
+            .collect();
         assert!(
             quarantined_ids.contains(&"invalid_sess"),
             "invalid session must be quarantined; report = {report:?}"
@@ -300,8 +297,11 @@ mod contract_tests {
 
         let report = RecoveryEngine::recover(&store);
         assert!(report.recovered.contains(&"valid_s".to_string()));
-        let quarantined_ids: Vec<&str> =
-            report.quarantined.iter().map(|(id, _)| id.as_str()).collect();
+        let quarantined_ids: Vec<&str> = report
+            .quarantined
+            .iter()
+            .map(|(id, _)| id.as_str())
+            .collect();
         assert!(quarantined_ids.contains(&"invalid_s"));
     }
 

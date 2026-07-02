@@ -46,25 +46,37 @@ impl std::fmt::Display for SmError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::BatchMissingOpenText => {
-                write!(f, "BATCH_MISSING_OPEN_TEXT: batch must contain >=1 OpenText question")
+                write!(
+                    f,
+                    "BATCH_MISSING_OPEN_TEXT: batch must contain >=1 OpenText question"
+                )
             }
             Self::SummaryConfirmReserved => {
                 write!(f, "SUMMARY_CONFIRM_RESERVED: SummaryConfirm questions are reserved for the engine")
             }
             Self::QueueDepthExceeded => {
-                write!(f, "QUEUE_DEPTH_EXCEEDED: queue would exceed cap of {QUEUE_DEPTH_CAP}")
+                write!(
+                    f,
+                    "QUEUE_DEPTH_EXCEEDED: queue would exceed cap of {QUEUE_DEPTH_CAP}"
+                )
             }
             Self::TokenMismatch => {
                 write!(f, "TOKEN_MISMATCH: the supplied token does not match")
             }
             Self::TokenAlreadyUsed => {
-                write!(f, "TOKEN_ALREADY_USED: no token is pending (already consumed or not issued)")
+                write!(
+                    f,
+                    "TOKEN_ALREADY_USED: no token is pending (already consumed or not issued)"
+                )
             }
             Self::InvalidTransition(msg) => {
                 write!(f, "INVALID_TRANSITION: {msg}")
             }
             Self::RevisionCapExceeded => {
-                write!(f, "REVISION_CAP_EXCEEDED: max {REVISION_CAP} revision cycles reached")
+                write!(
+                    f,
+                    "REVISION_CAP_EXCEEDED: max {REVISION_CAP} revision cycles reached"
+                )
             }
         }
     }
@@ -93,10 +105,7 @@ pub fn append_questions(state: &mut SessionState, questions: Vec<Question>) -> R
     }
 
     // Guard 1: at least one OpenText
-    if !questions
-        .iter()
-        .any(|q| q.kind == QuestionKind::OpenText)
-    {
+    if !questions.iter().any(|q| q.kind == QuestionKind::OpenText) {
         return Err(SmError::BatchMissingOpenText);
     }
 
@@ -118,11 +127,7 @@ pub fn append_questions(state: &mut SessionState, questions: Vec<Question>) -> R
 /// The caller must present the exact single-use token stored in `state.token`.
 /// On success the token is consumed (set to `None`).  On failure the token is
 /// left intact so the caller can retry with the correct value.
-pub fn append_answer(
-    state: &mut SessionState,
-    answer: Answer,
-    token: &str,
-) -> Result<(), SmError> {
+pub fn append_answer(state: &mut SessionState, answer: Answer, token: &str) -> Result<(), SmError> {
     match &state.token {
         None => return Err(SmError::TokenAlreadyUsed),
         Some(t) if !t.matches(token) => return Err(SmError::TokenMismatch),

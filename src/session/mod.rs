@@ -10,14 +10,14 @@ pub mod state;
 pub mod store;
 
 #[cfg(test)]
-mod tests;
-#[cfg(test)]
 mod contract_tests;
+#[cfg(test)]
+mod tests;
 
 pub use machine::{append_answer, append_questions, confirm, request_confirm, SmError};
+pub use recovery::{RecoveryEngine, RecoveryReport};
+pub use registry::{RegistryError, SessionRegistry};
 pub use schema::{NonEmptyPrompt, Question, QuestionId, QuestionKind};
+pub use sqlite_store::SqliteSessionStore;
 pub use state::{Answer, SessionState, SessionStatus, SingleUseToken};
 pub use store::{MemorySessionStore, SessionStore, StoreError};
-pub use sqlite_store::SqliteSessionStore;
-pub use recovery::{RecoveryEngine, RecoveryReport};
-pub use registry::{SessionRegistry, RegistryError};
