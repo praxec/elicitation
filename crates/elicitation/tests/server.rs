@@ -10,7 +10,7 @@ use elicitation::{
 };
 use elicitation_core::{Engine, FilesystemStore};
 use rmcp::model::CallToolRequestParams;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 fn server() -> (ElicitationServer, tempfile::TempDir) {
     let dir = tempfile::tempdir().unwrap();
@@ -125,9 +125,11 @@ fn append_remediate_accept_produces_conformance_signal() {
     });
     let st = call(&srv, TOOL_APPEND, remediate).unwrap();
     let signals = st["signals"].as_array().unwrap();
-    assert!(signals
-        .iter()
-        .any(|s| s["code"] == "accept_conformance" && s["kind"] == "remediate"));
+    assert!(
+        signals
+            .iter()
+            .any(|s| s["code"] == "accept_conformance" && s["kind"] == "remediate")
+    );
 }
 
 #[test]

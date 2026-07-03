@@ -34,11 +34,12 @@ fn empty_session_blocked_on_coverage() {
         .open_session("s", Some(one_dim_schema("purpose")))
         .unwrap();
     assert!(!st.readiness.ready);
-    assert!(st
-        .readiness
-        .blockers
-        .iter()
-        .any(|b| b.starts_with("COVERAGE")));
+    assert!(
+        st.readiness
+            .blockers
+            .iter()
+            .any(|b| b.starts_with("COVERAGE"))
+    );
 }
 
 #[test]
@@ -62,11 +63,12 @@ fn covered_but_only_open_is_blocked() {
     c.dimensions = vec!["purpose".into()];
     let st = eng.add_claim("s", c, None).unwrap();
     assert!(!st.readiness.ready);
-    assert!(st
-        .readiness
-        .blockers
-        .iter()
-        .any(|b| b.starts_with("COVERAGE")));
+    assert!(
+        st.readiness
+            .blockers
+            .iter()
+            .any(|b| b.starts_with("COVERAGE"))
+    );
 }
 
 #[test]
@@ -83,11 +85,12 @@ fn high_severity_contradiction_blocks() {
     c2.category = Category::Constraint;
     c2.dimensions = vec!["constraints".into()];
     let st = eng.add_claim("s", c2, None).unwrap();
-    assert!(st
-        .readiness
-        .blockers
-        .iter()
-        .any(|b| b.starts_with("CONTRADICTION")));
+    assert!(
+        st.readiness
+            .blockers
+            .iter()
+            .any(|b| b.starts_with("CONTRADICTION"))
+    );
     assert!(!st.readiness.ready);
 }
 
@@ -105,11 +108,12 @@ fn must_requirement_without_acceptance_or_owner_blocks() {
     };
     eng.add_claim("s", c, Some(meta)).unwrap();
     let st = eng.add_evidence("s", assent("s", "ev1", "c1")).unwrap();
-    assert!(st
-        .readiness
-        .blockers
-        .iter()
-        .any(|b| b.contains("acceptance criteria")));
+    assert!(
+        st.readiness
+            .blockers
+            .iter()
+            .any(|b| b.contains("acceptance criteria"))
+    );
     assert!(st.readiness.blockers.iter().any(|b| b.contains("no owner")));
 }
 
@@ -160,11 +164,12 @@ fn accept_conformance_blocks_until_resolved() {
         )
         .unwrap();
     assert!(!st.readiness.ready);
-    assert!(st
-        .readiness
-        .blockers
-        .iter()
-        .any(|b| b.starts_with("CONFORMANCE")));
+    assert!(
+        st.readiness
+            .blockers
+            .iter()
+            .any(|b| b.starts_with("CONFORMANCE"))
+    );
 }
 
 #[test]

@@ -25,6 +25,7 @@ use std::sync::Arc;
 use elicitation_core::{
     Claim, Engine, EngineError, EvidenceEvent, RemediationEvent, RemediationMove, RequirementMeta,
 };
+use rmcp::ErrorData as McpError;
 use rmcp::model::{
     CallToolRequestParams, CallToolResult, Implementation, InitializeRequestParams,
     InitializeResult, ListToolsResult, PaginatedRequestParams, ProtocolVersion, ServerCapabilities,
@@ -32,10 +33,9 @@ use rmcp::model::{
 };
 use rmcp::service::{NotificationContext, RequestContext, RoleServer};
 use rmcp::transport::stdio;
-use rmcp::ErrorData as McpError;
 use rmcp::{ServerHandler, ServiceExt};
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use elicitation_core::CoverageSchema;
 
