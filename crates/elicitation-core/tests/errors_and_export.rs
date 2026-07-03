@@ -243,12 +243,14 @@ fn requirement_derived_with_quality_checks() {
     };
     let st = eng.add_claim("s", c, Some(meta)).unwrap();
     let req = st.requirements.iter().find(|r| r.id == "req:c1").unwrap();
-    assert!(req
-        .quality_checks
-        .iter()
-        .any(|q| q.name == "has_owner" && q.passed));
-    assert!(req
-        .quality_checks
-        .iter()
-        .any(|q| q.name == "has_acceptance" && q.passed));
+    assert!(
+        req.quality_checks
+            .iter()
+            .any(|q| q.name == "has_owner" && q.passed)
+    );
+    assert!(
+        req.quality_checks
+            .iter()
+            .any(|q| q.name == "has_acceptance" && q.passed)
+    );
 }

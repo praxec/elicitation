@@ -52,7 +52,10 @@ impl std::fmt::Display for SmError {
                 )
             }
             Self::SummaryConfirmReserved => {
-                write!(f, "SUMMARY_CONFIRM_RESERVED: SummaryConfirm questions are reserved for the engine")
+                write!(
+                    f,
+                    "SUMMARY_CONFIRM_RESERVED: SummaryConfirm questions are reserved for the engine"
+                )
             }
             Self::QueueDepthExceeded => {
                 write!(

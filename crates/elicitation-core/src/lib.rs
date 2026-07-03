@@ -57,5 +57,5 @@ pub use projection::{AcceptStance, ClaimWithStanding, InterviewState, Registry};
 pub use readiness::ReadinessReport;
 pub use research::{NoResearch, ResearchProvider};
 pub use session::{CoverageDimension, CoverageSchema};
-pub use signal::{next_question, Signal, SignalKind};
+pub use signal::{Signal, SignalKind, next_question};
 pub use store::{FilesystemStore, StateStore};

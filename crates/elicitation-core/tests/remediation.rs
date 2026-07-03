@@ -305,19 +305,21 @@ fn accept_propagates_conformance_challenge() {
     // the contradicting claim is now challenged (conformance pressure)
     assert_eq!(standing_of(&st, "other"), HypothesisStanding::Challenged);
     // a remediate signal of code accept_conformance is present
-    assert!(st
-        .signals
-        .iter()
-        .any(|s| s.kind == SignalKind::Remediate && s.code == "accept_conformance"));
+    assert!(
+        st.signals
+            .iter()
+            .any(|s| s.kind == SignalKind::Remediate && s.code == "accept_conformance")
+    );
     // the stance is recorded with the nonconforming claim
     assert_eq!(st.accepted_stances.len(), 1);
     assert_eq!(st.accepted_stances[0].nonconforming_claims, vec!["other"]);
     // readiness is blocked by conformance
-    assert!(st
-        .readiness
-        .blockers
-        .iter()
-        .any(|b| b.starts_with("CONFORMANCE")));
+    assert!(
+        st.readiness
+            .blockers
+            .iter()
+            .any(|b| b.starts_with("CONFORMANCE"))
+    );
 
     // H1: spec.export must INCLUDE gov as a governing (withstood) hypothesis.
     // gov is tagged on a dimension so it lands in a dimension section.
@@ -366,9 +368,10 @@ fn accept_conformance_clears_when_nonconformer_retracted() {
         )
         .unwrap();
     assert!(st.accepted_stances[0].nonconforming_claims.is_empty());
-    assert!(!st
-        .readiness
-        .blockers
-        .iter()
-        .any(|b| b.starts_with("CONFORMANCE")));
+    assert!(
+        !st.readiness
+            .blockers
+            .iter()
+            .any(|b| b.starts_with("CONFORMANCE"))
+    );
 }
