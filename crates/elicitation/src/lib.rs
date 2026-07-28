@@ -10,8 +10,8 @@
 pub mod config;
 pub mod server;
 
-pub use config::{resolve_state_dir, STATE_DIR_ENV};
+pub use config::{STATE_DIR_ENV, resolve_state_dir};
 pub use server::{
-    tool_definitions, ElicitationServer, TOOL_APPEND, TOOL_NAMES, TOOL_QUESTION_NEXT,
-    TOOL_READINESS_ASSESS, TOOL_SESSION_OPEN, TOOL_SPEC_EXPORT, TOOL_STATE_GET,
+    ElicitationServer, TOOL_APPEND, TOOL_NAMES, TOOL_QUESTION_NEXT, TOOL_READINESS_ASSESS,
+    TOOL_SESSION_OPEN, TOOL_SPEC_EXPORT, TOOL_STATE_GET, tool_definitions,
 };

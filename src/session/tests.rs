@@ -4,7 +4,7 @@
 #[cfg(test)]
 mod poka_yoke_tests {
     use crate::session::{
-        machine::{append_answer, append_questions, confirm, request_confirm, SmError},
+        machine::{SmError, append_answer, append_questions, confirm, request_confirm},
         schema::{NonEmptyPrompt, Question, QuestionKind},
         state::{Answer, SessionState, SessionStatus, SingleUseToken},
         store::{MemorySessionStore, SessionStore, StoreError},

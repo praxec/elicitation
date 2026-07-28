@@ -14,8 +14,8 @@ use crate::event::{Event, EvidenceEvent};
 use crate::model::{Claim, RemediationEvent, RemediationMove, RequirementMeta};
 use crate::projection::{self, InterviewState};
 use crate::session::CoverageSchema;
-use crate::signal::{next_question, Signal};
-use crate::store::{validate_session_id, StateStore};
+use crate::signal::{Signal, next_question};
+use crate::store::{StateStore, validate_session_id};
 
 /// Per-session lock registry: a `session_id -> lock` map behind a `Mutex`.
 ///

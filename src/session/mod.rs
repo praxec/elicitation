@@ -14,7 +14,7 @@ mod contract_tests;
 #[cfg(test)]
 mod tests;
 
-pub use machine::{append_answer, append_questions, confirm, request_confirm, SmError};
+pub use machine::{SmError, append_answer, append_questions, confirm, request_confirm};
 pub use recovery::{RecoveryEngine, RecoveryReport};
 pub use registry::{RegistryError, SessionRegistry};
 pub use schema::{NonEmptyPrompt, Question, QuestionId, QuestionKind};

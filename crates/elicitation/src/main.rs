@@ -14,7 +14,7 @@
 
 use std::sync::Arc;
 
-use elicitation::{resolve_state_dir, ElicitationServer};
+use elicitation::{ElicitationServer, resolve_state_dir};
 use elicitation_core::{Engine, FilesystemStore};
 use tracing_subscriber::EnvFilter;
 
