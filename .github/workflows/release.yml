@@ -40,6 +40,7 @@ jobs:
           manifest-path: crates/elicitation/Cargo.toml
           target: ${{ matrix.target }}
           archive: elicitation-${{ matrix.target }}
+          checksum: sha256
           token: ${{ secrets.GITHUB_TOKEN }}
 
   image:
