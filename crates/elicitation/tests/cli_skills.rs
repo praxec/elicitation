@@ -43,13 +43,19 @@ fn install(base: &Path, target: &str, extra: &[&str]) -> Output {
 #[test]
 fn version_flag_prints_the_name_and_version() {
     let out = run(&["--version"]);
-    assert_eq!(stdout(&out), format!("{} {}\n", "elicitation", env!("CARGO_PKG_VERSION")));
+    assert_eq!(
+        stdout(&out),
+        format!("{} {}\n", "elicitation", env!("CARGO_PKG_VERSION"))
+    );
 }
 
 #[test]
 fn short_version_flag_prints_the_name_and_version() {
     let out = run(&["-V"]);
-    assert_eq!(stdout(&out), format!("elicitation {}\n", env!("CARGO_PKG_VERSION")));
+    assert_eq!(
+        stdout(&out),
+        format!("elicitation {}\n", env!("CARGO_PKG_VERSION"))
+    );
 }
 
 #[test]
