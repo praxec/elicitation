@@ -9,6 +9,7 @@
 
 pub mod config;
 pub mod server;
+pub mod skills;
 
 pub use config::{STATE_DIR_ENV, resolve_state_dir};
 pub use server::{

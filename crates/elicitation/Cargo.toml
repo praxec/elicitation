@@ -20,6 +20,7 @@ path = "src/main.rs"
 [dependencies]
 eliciter-core = { path = "../elicitation-core", version = "0.0.1" }
 anyhow = "1"
+sha2 = "0.10"
 rmcp = { version = "1.8", default-features = false, features = ["server", "macros", "transport-io"] }
 serde = { workspace = true }
 serde_json = { workspace = true }

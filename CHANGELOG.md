@@ -28,6 +28,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     `-D warnings` and CI runs the workspace test suite.
   - `docs/releasing.md`, the maintainer release runbook, including the manual
     crates.io publish order (`eliciter-core` before `eliciter`).
+- `elicitation` command-line surface: `--version`, `--help`, and
+  `skills install|uninstall|list --target <claude|codex|both>` with
+  `--dir`/`--project`/`--user`. With no arguments the binary still serves MCP
+  over stdio.
+- Agent skills under `skills/` (`elicitation`, `elicit-interview`,
+  `elicit-to-plan`), embedded into the binary at build time and written with a
+  per-root manifest that refuses to overwrite a skill the user edited.
+- npm launcher package `@matthew-cochran/elicitation`, which downloads the
+  release binary for the host platform, verifies it against the release
+  `checksums.sha256`, caches it, and execs it with stdio passed through.
 
 ### Changed
 

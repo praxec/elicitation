@@ -1,0 +1,45 @@
+{
+  "name": "@matthew-cochran/elicitation",
+  "version": "0.0.1",
+  "description": "npx launcher for the elicitation MCP server: downloads the verified release binary for your platform and runs it over stdio.",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "elicitation",
+    "discovery",
+    "requirements",
+    "interview"
+  ],
+  "license": "Apache-2.0",
+  "author": "Matthew Cochran <matthew@cochranweb.com>",
+  "homepage": "https://github.com/praxec/elicitation#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/praxec/elicitation.git",
+    "directory": "npm"
+  },
+  "bugs": {
+    "url": "https://github.com/praxec/elicitation/issues"
+  },
+  "bin": {
+    "elicitation": "bin/elicitation.js"
+  },
+  "files": [
+    "bin/elicitation.js",
+    "lib/install.js",
+    "lib/postinstall.js",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "scripts": {
+    "postinstall": "node lib/postinstall.js",
+    "test": "node --test test/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
