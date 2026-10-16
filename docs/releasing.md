@@ -144,9 +144,28 @@ cargo publish --dry-run --locked -p eliciter-core
 cargo package --list --locked -p eliciter-core
 cargo publish --locked -p eliciter-core
 
-cargo publish --dry-run --locked -p eliciter
-cargo package --list --locked -p eliciter
-cargo publish --locked -p eliciter
+```
+
+`eliciter` embeds the agent skills at build time from
+`crates/elicitation/skills` when it exists (else the repository-root
+`skills/`), and a packaged crate cannot reach the repository root, so copy the
+skills into the crate for packaging. Paste this block whole: it stops at the
+first failure and refuses to publish when the tree has other changes:
+
+```sh
+(
+  set -euo pipefail
+  rm -rf crates/elicitation/skills && cp -R skills crates/elicitation/skills
+  dirty="$(git status --porcelain --untracked-files=all | grep -v ' crates/elicitation/skills/' || true)"
+  if [ -n "$dirty" ]; then
+    printf '%s\n' "$dirty"
+    echo "the working tree has changes besides crates/elicitation/skills/; not publishing" >&2
+    exit 1
+  fi
+  cargo publish -p eliciter --dry-run --locked --allow-dirty
+  cargo publish -p eliciter --locked --allow-dirty
+  rm -rf crates/elicitation/skills
+)
 ```
 
 The `eliciter` dependency pins `version = "X.Y.Z"` with a path override, so

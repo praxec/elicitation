@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- The `eliciter` crate packages its agent skills: `build.rs` prefers `crates/elicitation/skills` (copied in at publish time, git-ignored) over the repository-root `skills/`, and the crate's `include` list carries them; `docs/releasing.md` gives the copy-and-publish block. `eliciter` 0.1.0 on crates.io was published from this fix.
+
 ## [0.1.0] - 2026-10-16
 
 ### Added

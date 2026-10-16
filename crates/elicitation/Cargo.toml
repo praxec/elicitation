@@ -8,6 +8,9 @@ authors.workspace = true
 description = "Stdio MCP server wrapping the eliciter-core kernel: a deterministic, offline structured-discovery interview engine exposed as a command/query MCP tool surface."
 keywords = ["mcp", "elicitation", "requirements", "discovery", "interview"]
 categories = ["development-tools", "command-line-utilities"]
+# Explicit so the packaged crate carries the skills copied into
+# crates/elicitation/skills at publish time (that copy is git-ignored).
+include = ["Cargo.toml", "README.md", "build.rs", "src/**", "skills/**"]
 
 [lib]
 name = "elicitation"
