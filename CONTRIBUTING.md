@@ -17,7 +17,7 @@ are denied). Please make sure those pass locally before opening a pull request.
 
 ## Guidelines
 
-- Keep the two concerns clean: the pure kernel (`elicitation-core`) has no MCP and
+- Keep the two concerns clean: the pure kernel (`eliciter-core`, in `crates/elicitation-core`) has no MCP and
   no network — its only I/O is the event-log store trait; the MCP/stdio layer
   (`elicitation`) sits on top.
 - The kernel is a pure function of `(events in) → (computed standing + ...)`. Keep

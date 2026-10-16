@@ -1,8 +1,8 @@
 # elicitation
 
 [![CI](https://github.com/praxec/elicitation/actions/workflows/ci.yml/badge.svg)](https://github.com/praxec/elicitation/actions/workflows/ci.yml)
-[![crates.io](https://img.shields.io/crates/v/elicitation.svg)](https://crates.io/crates/elicitation)
-[![docs.rs](https://docs.rs/elicitation-core/badge.svg)](https://docs.rs/elicitation-core)
+[![crates.io](https://img.shields.io/crates/v/eliciter.svg)](https://crates.io/crates/eliciter)
+[![docs.rs](https://docs.rs/eliciter-core/badge.svg)](https://docs.rs/eliciter-core)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 A deterministic, offline, **pure-compute** MCP server for structured discovery
@@ -34,8 +34,11 @@ which makes the whole kernel golden-testable.
 From crates.io:
 
 ```sh
-cargo install elicitation
+cargo install eliciter
 ```
+
+The crate is `eliciter` (the name `elicitation` on crates.io belongs to another
+project); the installed binary is still `elicitation`.
 
 Or download a pre-built binary for your platform from the
 [latest release](https://github.com/praxec/elicitation/releases/latest)
@@ -68,13 +71,13 @@ everything that *reads* is a projection.
 | `readiness.assess` | query | Compute the `ReadinessReport` — `ready` bool, per-dimension standing, blockers, open signals. |
 | `spec.export` | query | Emit the aligned, plan-ready spec document. |
 
-## Use `elicitation-core` as a library
+## Use `eliciter-core` as a library
 
 The kernel is also a plain Rust library, independent of MCP:
 
 ```rust
 use std::sync::Arc;
-use elicitation_core::{Engine, FilesystemStore};
+use eliciter_core::{Engine, FilesystemStore};
 
 let store = FilesystemStore::new("/tmp/elicitation")?;
 let engine = Engine::new(Arc::new(store));
@@ -87,10 +90,10 @@ let state = engine.open_session("design-review", None)?;
 // readiness is computed, never stored — the same events always recompute it
 let report = engine.readiness("design-review")?;
 println!("ready to plan? {}", report.ready);
-# Ok::<(), elicitation_core::EngineError>(())
+# Ok::<(), eliciter_core::EngineError>(())
 ```
 
-See the [API docs](https://docs.rs/elicitation-core) and
+See the [API docs](https://docs.rs/eliciter-core) and
 [`docs/spec.md`](docs/spec.md) for the full design.
 
 ## Session lifecycle (quickstart)

@@ -15,7 +15,7 @@
 use std::sync::Arc;
 
 use elicitation::{ElicitationServer, resolve_state_dir};
-use elicitation_core::{Engine, FilesystemStore};
+use eliciter_core::{Engine, FilesystemStore};
 use tracing_subscriber::EnvFilter;
 
 #[tokio::main]

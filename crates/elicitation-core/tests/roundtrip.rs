@@ -7,7 +7,7 @@ mod common;
 use std::sync::Arc;
 
 use common::{claim, temp_engine};
-use elicitation_core::{
+use eliciter_core::{
     Engine, EvidenceEvent, EvidenceRef, EvidenceSourceType, FilesystemStore, RemediationEvent,
     RemediationMove,
 };
@@ -78,6 +78,6 @@ fn json_serialization_round_trips_state() {
     drive(&eng);
     let st = eng.state("s").unwrap();
     let json = serde_json::to_string(&st).unwrap();
-    let back: elicitation_core::InterviewState = serde_json::from_str(&json).unwrap();
+    let back: eliciter_core::InterviewState = serde_json::from_str(&json).unwrap();
     assert_eq!(st, back);
 }

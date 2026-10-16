@@ -4,12 +4,12 @@
 mod common;
 
 use common::{claim, temp_engine};
-use elicitation_core::{
+use eliciter_core::{
     EvidenceEvent, EvidenceRef, EvidenceSourceType, HypothesisStanding, Polarity, RemediationEvent,
     RemediationMove, SignalKind,
 };
 
-fn standing_of(state: &elicitation_core::InterviewState, id: &str) -> HypothesisStanding {
+fn standing_of(state: &eliciter_core::InterviewState, id: &str) -> HypothesisStanding {
     state
         .claims
         .iter()

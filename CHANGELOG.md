@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Renamed the crates for the crates.io release: `elicitation-core` is now
+  `eliciter-core` (library name `eliciter_core`) and `elicitation` is now
+  `eliciter`. The installed binary is still named `elicitation`.
+- Raised the `rmcp` dependency requirement to 1.8.
+
+### Removed
+
+- Removed the unused legacy root `elicitation-session` crate, including its
+  bundled SQLite dependency. The repository root is now a virtual workspace with
+  members `crates/elicitation-core` and `crates/elicitation`.
+
 ## [0.0.1] - 2026-06-22
 
 Initial release.

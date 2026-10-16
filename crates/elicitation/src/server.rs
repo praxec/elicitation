@@ -22,7 +22,7 @@
 use std::borrow::Cow;
 use std::sync::Arc;
 
-use elicitation_core::{
+use eliciter_core::{
     Claim, Engine, EngineError, EvidenceEvent, RemediationEvent, RemediationMove, RequirementMeta,
 };
 use rmcp::ErrorData as McpError;
@@ -37,7 +37,7 @@ use rmcp::{ServerHandler, ServiceExt};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use elicitation_core::CoverageSchema;
+use eliciter_core::CoverageSchema;
 
 /// Tool names (spec §5), `noun.verb` like the rest of the workspace.
 pub const TOOL_SESSION_OPEN: &str = "session.open";
@@ -100,7 +100,7 @@ struct RemediationInput {
     session_id: String,
     #[serde(flatten)]
     r#move: RemediationMove,
-    source: elicitation_core::EvidenceRef,
+    source: eliciter_core::EvidenceRef,
     #[serde(default)]
     detail: Option<String>,
 }
@@ -125,7 +125,7 @@ struct SessionIdArgs {
 
 #[derive(Debug, Serialize)]
 struct NextQuestionResponse {
-    question: Option<elicitation_core::Signal>,
+    question: Option<eliciter_core::Signal>,
 }
 
 // --- server ----------------------------------------------------------------

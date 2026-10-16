@@ -1,9 +1,9 @@
 #![cfg_attr(not(test), warn(clippy::unwrap_used))]
 
-//! `elicitation` — the stdio MCP server wrapping [`elicitation_core`].
+//! `elicitation` — the stdio MCP server wrapping [`eliciter_core`].
 //!
 //! The server is thin: [`ElicitationServer`] parses each tool call, invokes one
-//! [`Engine`](elicitation_core::Engine) method, and serializes the result. All
+//! [`Engine`](eliciter_core::Engine) method, and serializes the result. All
 //! structure and state management lives in the kernel (`elicitation-core`); this
 //! crate only translates the MCP wire protocol to/from kernel calls.
 

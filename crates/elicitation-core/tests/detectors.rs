@@ -4,7 +4,7 @@
 mod common;
 
 use common::{claim, temp_engine};
-use elicitation_core::{
+use eliciter_core::{
     Category, ContradictionKind, EvidenceEvent, EvidenceRef, EvidenceSourceType, Object, Polarity,
     Severity,
 };
@@ -101,10 +101,10 @@ fn qualified_scopes_dissolve_contradiction() {
     assert_eq!(st.contradictions.len(), 1);
 
     // Qualify c1 into a distinct condition; the conflict dissolves.
-    let rem = elicitation_core::RemediationEvent {
+    let rem = eliciter_core::RemediationEvent {
         id: "r1".into(),
         session_id: "s".into(),
-        r#move: elicitation_core::RemediationMove::Qualify {
+        r#move: eliciter_core::RemediationMove::Qualify {
             claim: "c1".into(),
             condition: Some("peak".into()),
             time_scope: None,
@@ -115,10 +115,10 @@ fn qualified_scopes_dissolve_contradiction() {
     let st = eng.remediate("s", rem).unwrap();
     // c2 still unscoped → overlapping scope → still contradicts. Qualify c2 too.
     assert_eq!(st.contradictions.len(), 1);
-    let rem2 = elicitation_core::RemediationEvent {
+    let rem2 = eliciter_core::RemediationEvent {
         id: "r2".into(),
         session_id: "s".into(),
-        r#move: elicitation_core::RemediationMove::Qualify {
+        r#move: eliciter_core::RemediationMove::Qualify {
             claim: "c2".into(),
             condition: Some("offpeak".into()),
             time_scope: None,
@@ -214,7 +214,7 @@ fn requirement_claim_app_refutation_surfaces_spec_vs_reality() {
         .standing;
     assert_eq!(
         standing,
-        elicitation_core::HypothesisStanding::Challenged,
+        eliciter_core::HypothesisStanding::Challenged,
         "intent claim with app refutation must be challenged regardless of user assent"
     );
 
@@ -260,7 +260,7 @@ fn context_claim_keeps_user_outranks_app() {
         .find(|c| c.claim.id == "c1")
         .unwrap()
         .standing;
-    assert_eq!(standing, elicitation_core::HypothesisStanding::Withstood);
+    assert_eq!(standing, eliciter_core::HypothesisStanding::Withstood);
 }
 
 #[test]
@@ -268,10 +268,10 @@ fn entity_objects_equal_then_polarity_conflict() {
     let (eng, _d) = temp_engine();
     eng.open_session("s", None).unwrap();
     let mut c1 = claim("s", "c1", "e:app", "depends_on", "x");
-    c1.object = Object::Entity(elicitation_core::EntityRef::new("e:db"));
+    c1.object = Object::Entity(eliciter_core::EntityRef::new("e:db"));
     eng.add_claim("s", c1, None).unwrap();
     let mut c2 = claim("s", "c2", "e:app", "depends_on", "x");
-    c2.object = Object::Entity(elicitation_core::EntityRef::new("e:db"));
+    c2.object = Object::Entity(eliciter_core::EntityRef::new("e:db"));
     c2.polarity = Polarity::Negative;
     let st = eng.add_claim("s", c2, None).unwrap();
     assert_eq!(st.contradictions.len(), 1);
