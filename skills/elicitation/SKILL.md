@@ -80,3 +80,23 @@ Sessions are isolated by `session_id`; every tool call carries one.
 
 Readiness is honest by construction: it reports that the spec *survived
 falsification*, never that it is true.
+
+## Optional Jev assist tools (advisory, paid)
+
+When the `jev` feature is compiled (default) **and** a paid Jev key is
+configured, four additional advisory tools appear. They never append events:
+each returns a proposal with per-option probabilities and the question text it
+sent, and *you* decide whether to `append` it. With no key they fail with a
+stable `ASSIST_UNAVAILABLE` error and the six core tools are unaffected.
+
+| Tool | Does |
+|------|------|
+| `assist.classify_reply` | `{session_id, claim_id?, reply}` -> `assent` \| `refute` \| `new_claim` \| `off_topic`, plus a proposed `append` payload (`add_evidence` `user_assent`/`user_refutation`, or `add_claim`). |
+| `assist.canonicalize` | `{session_id, subject, predicate, object?}` -> the best-matching existing registry entity/predicate ids (or `new`), to fight the exact-match identity weakness. |
+| `assist.contradictions` | `{session_id}` -> meaning-level contradiction candidates the structural detectors did not flag, for you to confirm via `remediate`. |
+| `assist.phrase_question` | `{session_id}` -> a natural rewording of `question.next`'s `suggested_question`. |
+
+Config: `TYPESAFE_JEV_API_KEY` (TypeSafe) or `OPENROUTER_API_KEY` (OpenRouter);
+optional `ELICITATION_JEV_TIMEOUT_SECS`, `ELICITATION_JEV_BASE_URL` and
+`ELICITATION_JEV_MODEL`. Set `ELICITATION_ASSIST` to a non-matching list
+(e.g. `rig`) to opt out explicitly. Keys are never printed.

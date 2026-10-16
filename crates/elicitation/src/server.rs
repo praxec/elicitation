@@ -18,6 +18,10 @@
 //!
 //! Errors propagate the kernel's stable prefixes (`SESSION_NOT_FOUND`,
 //! `INVALID_CLAIM`, `BAD_SESSION_ID`, …) verbatim in the MCP error message.
+//!
+//! When the `jev` feature is compiled and a Jev key is configured, four
+//! advisory assist tools (`assist.*`) are additionally advertised. They never
+//! mutate the log and are served over the async dispatch path.
 
 use std::borrow::Cow;
 use std::sync::Arc;
@@ -39,6 +43,8 @@ use serde_json::{Value, json};
 
 use eliciter_core::CoverageSchema;
 
+use crate::assist::{AssistUnavailable, UnavailableReason};
+
 /// Tool names (spec §5), `noun.verb` like the rest of the workspace.
 pub const TOOL_SESSION_OPEN: &str = "session.open";
 pub const TOOL_APPEND: &str = "append";
@@ -55,6 +61,21 @@ pub const TOOL_NAMES: &[&str] = &[
     TOOL_QUESTION_NEXT,
     TOOL_READINESS_ASSESS,
     TOOL_SPEC_EXPORT,
+];
+
+// --- optional Jev assist tools (always recognized; served via async dispatch) --
+
+pub const TOOL_ASSIST_CLASSIFY_REPLY: &str = "assist.classify_reply";
+pub const TOOL_ASSIST_CANONICALIZE: &str = "assist.canonicalize";
+pub const TOOL_ASSIST_CONTRADICTIONS: &str = "assist.contradictions";
+pub const TOOL_ASSIST_PHRASE_QUESTION: &str = "assist.phrase_question";
+
+/// The four advisory assist tool names, in declaration order.
+pub const ASSIST_TOOL_NAMES: &[&str] = &[
+    TOOL_ASSIST_CLASSIFY_REPLY,
+    TOOL_ASSIST_CANONICALIZE,
+    TOOL_ASSIST_CONTRADICTIONS,
+    TOOL_ASSIST_PHRASE_QUESTION,
 ];
 
 // --- wire arg structs ------------------------------------------------------
@@ -136,15 +157,61 @@ pub struct ElicitationServer {
     engine: Engine,
     server_name: String,
     server_version: String,
+    #[cfg(feature = "jev")]
+    judge: Option<Arc<dyn crate::assist::jev::Judge>>,
+    #[cfg(feature = "jev")]
+    judge_unavailable: Option<AssistUnavailable>,
 }
 
 impl ElicitationServer {
-    /// Build a server backed by the supplied engine.
+    /// Build a server backed by the supplied engine. The assist backend is
+    /// resolved from the environment lazily when the stdio transport starts
+    /// (see [`ElicitationServer::serve_stdio`]), so the constructor stays
+    /// deterministic for tests.
     pub fn new(engine: Engine) -> Self {
         Self {
             engine,
             server_name: "elicitation".to_string(),
             server_version: env!("CARGO_PKG_VERSION").to_string(),
+            #[cfg(feature = "jev")]
+            judge: None,
+            #[cfg(feature = "jev")]
+            judge_unavailable: None,
+        }
+    }
+
+    /// Inject a Jev judge (tests and embedders). Clears any startup
+    /// unavailability reason.
+    #[cfg(feature = "jev")]
+    pub fn with_judge(mut self, judge: Arc<dyn crate::assist::jev::Judge>) -> Self {
+        self.judge = Some(judge);
+        self.judge_unavailable = None;
+        self
+    }
+
+    /// Record the specific reason a compiled assist backend could not be built
+    /// at startup (reported verbatim by every assist tool).
+    #[cfg(feature = "jev")]
+    pub fn with_assist_unavailable(mut self, error: AssistUnavailable) -> Self {
+        self.judge = None;
+        self.judge_unavailable = Some(error);
+        self
+    }
+
+    /// Best-effort resolve of the Jev config from the environment. A configured
+    /// key installs an [`HttpJudge`](crate::assist::jev::HttpJudge); a
+    /// misconfiguration records why assist is unavailable.
+    #[cfg(feature = "jev")]
+    fn resolve_assist_from_env(&mut self) {
+        if self.judge.is_some() {
+            return;
+        }
+        match crate::assist::jev::JevConfig::from_env() {
+            Ok(config) => {
+                self.judge = Some(Arc::new(crate::assist::jev::HttpJudge::new(config)));
+                self.judge_unavailable = None;
+            }
+            Err(error) => self.judge_unavailable = Some(error),
         }
     }
 
@@ -154,21 +221,71 @@ impl ElicitationServer {
     }
 
     /// Serve over stdio. Blocks until the peer disconnects.
-    pub async fn serve_stdio(self) -> anyhow::Result<()> {
+    #[cfg_attr(not(feature = "jev"), allow(unused_mut))]
+    pub async fn serve_stdio(mut self) -> anyhow::Result<()> {
+        #[cfg(feature = "jev")]
+        self.resolve_assist_from_env();
         let service = self.serve(stdio()).await?;
         service.waiting().await?;
         Ok(())
     }
 
-    /// Transport-free dispatch entry point (tests call this directly).
-    pub fn dispatch_call(&self, request: CallToolRequestParams) -> Result<Value, McpError> {
-        let args: Value = request
+    fn arguments(request: &CallToolRequestParams) -> Value {
+        request
             .arguments
             .as_ref()
             .map(|m| Value::Object(m.clone()))
-            .unwrap_or_else(|| json!({}));
+            .unwrap_or_else(|| json!({}))
+    }
 
-        match request.name.as_ref() {
+    /// Synchronous transport-free dispatch for the six core tools. The assist
+    /// tools are async (they may hit the network) and are served by
+    /// [`ElicitationServer::dispatch_call_async`]; calling one here reports
+    /// `ASSIST_UNAVAILABLE`.
+    pub fn dispatch_call(&self, request: CallToolRequestParams) -> Result<Value, McpError> {
+        let args = Self::arguments(&request);
+        let name = request.name.as_ref();
+        if ASSIST_TOOL_NAMES.contains(&name) {
+            return Err(self.assist_unavailable_reason().to_mcp());
+        }
+        self.dispatch_core(name, args)
+    }
+
+    /// Transport-free async dispatch. Serves all ten tools; the four assist
+    /// tools delegate to [`crate::assist::dispatch`].
+    pub async fn dispatch_call_async(
+        &self,
+        request: CallToolRequestParams,
+    ) -> Result<Value, McpError> {
+        let args = Self::arguments(&request);
+        let name = request.name.as_ref();
+        if ASSIST_TOOL_NAMES.contains(&name) {
+            #[cfg(feature = "jev")]
+            {
+                return crate::assist::dispatch::call(
+                    &self.engine,
+                    self.judge.as_deref(),
+                    self.judge_unavailable.as_ref(),
+                    name,
+                    args,
+                )
+                .await;
+            }
+            #[cfg(not(feature = "jev"))]
+            {
+                let _ = args;
+                return Err(AssistUnavailable::new(
+                    UnavailableReason::FeatureNotBuilt,
+                    "the jev feature is not compiled",
+                )
+                .to_mcp());
+            }
+        }
+        self.dispatch_core(name, args)
+    }
+
+    fn dispatch_core(&self, name: &str, args: Value) -> Result<Value, McpError> {
+        match name {
             TOOL_SESSION_OPEN => self.handle_session_open(args),
             TOOL_APPEND => self.handle_append(args),
             TOOL_STATE_GET => self.handle_state_get(args),
@@ -178,10 +295,41 @@ impl ElicitationServer {
             other => Err(McpError::invalid_params(
                 format!(
                     "Unknown tool '{other}'. Available: {}.",
-                    TOOL_NAMES.join(", ")
+                    all_tool_names().join(", ")
                 ),
                 None,
             )),
+        }
+    }
+
+    /// The tools advertised for this running server. The six core tools are
+    /// always present; the four assist tools appear only once a Jev backend is
+    /// configured, so a key-less build advertises exactly the core surface.
+    #[cfg_attr(not(feature = "jev"), allow(unused_mut))]
+    fn advertised_tool_definitions(&self) -> Vec<Tool> {
+        let mut tools = tool_definitions();
+        #[cfg(feature = "jev")]
+        if self.judge.is_some() {
+            tools.extend(assist_tool_definitions());
+        }
+        tools
+    }
+
+    /// The reason to report when an assist tool is called on the synchronous
+    /// dispatch path.
+    fn assist_unavailable_reason(&self) -> AssistUnavailable {
+        #[cfg(feature = "jev")]
+        {
+            self.judge_unavailable.clone().unwrap_or_else(|| {
+                AssistUnavailable::new(UnavailableReason::NoKey, "assist judge is not configured")
+            })
+        }
+        #[cfg(not(feature = "jev"))]
+        {
+            AssistUnavailable::new(
+                UnavailableReason::FeatureNotBuilt,
+                "the jev feature is not compiled",
+            )
         }
     }
 
@@ -287,7 +435,9 @@ impl ServerHandler for ElicitationServer {
         _request: Option<PaginatedRequestParams>,
         _context: RequestContext<RoleServer>,
     ) -> Result<ListToolsResult, McpError> {
-        Ok(ListToolsResult::with_all_items(tool_definitions()))
+        Ok(ListToolsResult::with_all_items(
+            self.advertised_tool_definitions(),
+        ))
     }
 
     async fn call_tool(
@@ -295,11 +445,13 @@ impl ServerHandler for ElicitationServer {
         request: CallToolRequestParams,
         _context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, McpError> {
-        self.dispatch_call(request).map(CallToolResult::structured)
+        self.dispatch_call_async(request)
+            .await
+            .map(CallToolResult::structured)
     }
 
     fn get_tool(&self, name: &str) -> Option<Tool> {
-        tool_definitions().into_iter().find(|t| t.name == name)
+        all_tool_definitions().into_iter().find(|t| t.name == name)
     }
 
     async fn on_initialized(&self, _context: NotificationContext<RoleServer>) {
@@ -322,7 +474,7 @@ fn to_value<T: Serialize>(value: &T) -> Result<Value, McpError> {
 /// Map a kernel error to an MCP error, preserving the stable prefix in the
 /// message. `BAD_SESSION_ID` / `INVALID_*` / `DUPLICATE_ID` are caller bugs
 /// (`invalid_params`); the rest are surfaced as `internal_error`.
-fn engine_error_to_mcp(err: EngineError) -> McpError {
+pub(crate) fn engine_error_to_mcp(err: EngineError) -> McpError {
     let msg = err.to_string();
     match err {
         EngineError::BadSessionId(_)
@@ -442,6 +594,86 @@ pub fn tool_definitions() -> Vec<Tool> {
             session_id_schema(),
         ),
     ]
+}
+
+/// The four advisory assist tool definitions, advertised only when the `jev`
+/// feature is compiled. Kept separate from [`tool_definitions`] so the six
+/// core tools remain the stable, always-present surface (spec §5).
+#[cfg(feature = "jev")]
+pub fn assist_tool_definitions() -> Vec<Tool> {
+    vec![
+        Tool::new(
+            Cow::Borrowed(TOOL_ASSIST_CLASSIFY_REPLY),
+            Cow::Borrowed(
+                "ADVISORY: classify a user reply as assent | refute | new_claim | off_topic \
+                 (with per-option probabilities) and return a proposed `append` payload the \
+                 caller may submit itself. Never appends anything.",
+            ),
+            schema_object(json!({
+                "type": "object",
+                "properties": {
+                    "session_id": { "type": "string" },
+                    "claim_id": { "type": ["string", "null"] },
+                    "reply": { "type": "string" }
+                },
+                "required": ["session_id", "reply"],
+                "additionalProperties": false
+            })),
+        ),
+        Tool::new(
+            Cow::Borrowed(TOOL_ASSIST_CANONICALIZE),
+            Cow::Borrowed(
+                "ADVISORY: match a subject/predicate/object to the best existing registry \
+                 entity and predicate ids, or `new`, with per-option probabilities. Never \
+                 appends anything.",
+            ),
+            schema_object(json!({
+                "type": "object",
+                "properties": {
+                    "session_id": { "type": "string" },
+                    "subject": { "type": "string" },
+                    "predicate": { "type": "string" },
+                    "object": { "type": ["string", "null"] }
+                },
+                "required": ["session_id", "subject", "predicate"],
+                "additionalProperties": false
+            })),
+        ),
+        Tool::new(
+            Cow::Borrowed(TOOL_ASSIST_CONTRADICTIONS),
+            Cow::Borrowed(
+                "ADVISORY: meaning-level contradiction candidates between live claims that \
+                 the structural detectors did not flag, each with per-option probabilities, \
+                 for the caller to confirm via `remediate`. Never appends anything.",
+            ),
+            session_id_schema(),
+        ),
+        Tool::new(
+            Cow::Borrowed(TOOL_ASSIST_PHRASE_QUESTION),
+            Cow::Borrowed(
+                "ADVISORY: choose a natural rewording of `question.next`'s suggested \
+                 question, with per-option probabilities. Never appends anything.",
+            ),
+            session_id_schema(),
+        ),
+    ]
+}
+
+/// The six core tools plus the assist tools available in this build.
+#[cfg_attr(not(feature = "jev"), allow(unused_mut))]
+pub fn all_tool_definitions() -> Vec<Tool> {
+    let mut tools = tool_definitions();
+    #[cfg(feature = "jev")]
+    tools.extend(assist_tool_definitions());
+    tools
+}
+
+#[cfg_attr(not(feature = "jev"), allow(unused_mut))]
+fn all_tool_names() -> Vec<&'static str> {
+    let mut names: Vec<&'static str> = TOOL_NAMES.to_vec();
+    #[cfg(feature = "jev")]
+    names.extend(ASSIST_TOOL_NAMES.iter().copied());
+    names
 }
 
 fn session_id_schema() -> Arc<rmcp::model::JsonObject> {

@@ -8,6 +8,15 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Optional, opt-in Jev assist layer behind the default-on `jev` cargo feature:
+  a provider-neutral `Judge` trait and TypeSafe/OpenRouter Jev HTTP client
+  (`crates/elicitation/src/assist/`), plus four advisory MCP tools that never
+  append events — `assist.classify_reply`, `assist.canonicalize`,
+  `assist.contradictions` and `assist.phrase_question`. They return proposals
+  with per-option probabilities and the question text sent, require a paid key
+  (`TYPESAFE_JEV_API_KEY` or `OPENROUTER_API_KEY`), and fail with a stable
+  `ASSIST_UNAVAILABLE` error when unconfigured; the six core tools are
+  unaffected and the kernel stays network-free.
 - Release engineering brought up to the praxec release standard:
   - `.github/workflows/release.yml` builds six targets (Linux, macOS and
     Windows on x86_64 and ARM64, including `aarch64-pc-windows-msvc`),
