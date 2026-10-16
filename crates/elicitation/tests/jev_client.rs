@@ -50,6 +50,9 @@ impl Stub {
                 while !stop.load(Ordering::SeqCst) {
                     match listener.accept() {
                         Ok((mut stream, _)) => {
+                            // macOS hands back accepted sockets non-blocking when
+                            // the listener is; the request read below must block.
+                            let _ = stream.set_nonblocking(false);
                             hits.fetch_add(1, Ordering::SeqCst);
                             if let Some((head, request_body)) = read_request(&mut stream) {
                                 heads.lock().expect("heads").push(head);
