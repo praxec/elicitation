@@ -26,13 +26,19 @@ fn main() {
     }
 }
 
-/// The repository-root `skills/` directory (this package lives two levels down,
-/// at `crates/elicitation`).
+/// The skills directory: `$CARGO_MANIFEST_DIR/skills` when the crate was
+/// packaged with a copy (crates.io), else the repository-root `skills/` (this
+/// package lives two levels down, at `crates/elicitation`).
 fn skills_root() -> PathBuf {
     let manifest_dir = PathBuf::from(
         std::env::var_os("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR is set by cargo"),
     );
-    let root = manifest_dir.join("..").join("..").join("skills");
+    let packaged = manifest_dir.join("skills");
+    let root = if packaged.is_dir() {
+        packaged
+    } else {
+        manifest_dir.join("..").join("..").join("skills")
+    };
     fs::canonicalize(&root).unwrap_or(root)
 }
 
