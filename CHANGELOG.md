@@ -6,8 +6,37 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Release engineering brought up to the praxec release standard:
+  - `.github/workflows/release.yml` builds six targets (Linux, macOS and
+    Windows on x86_64 and ARM64, including `aarch64-pc-windows-msvc`),
+    smoke-tests every packaged binary with `scripts/mcp-smoke.mjs`, and
+    aggregates one combined `checksums.sha256` and `release-manifest.json` via
+    `scripts/release-manifest.sh` before publishing the draft release. The npm
+    launcher steps are left as a clearly marked placeholder.
+  - `.github/workflows/image.yml` builds `ghcr.io/praxec/elicitation` from the
+    checksum-verified Linux release binaries with `Dockerfile.release`,
+    smoke-tests the image over MCP, and publishes `server.json` to the MCP
+    registry best-effort.
+  - `.github/workflows/installer-tests.yml` runs the installer behavior tests.
+  - `scripts/check-version-sync.sh` (with `--tag` for release validation, and
+    checks for the `eliciter-core` dependency version),
+    `scripts/release-manifest.sh`, `scripts/mcp-smoke.mjs`, `scripts/install.sh`,
+    `scripts/install.ps1` and `scripts/release.test.mjs`.
+  - `deny.toml` and a `cargo-deny` CI job; clippy is now required to pass with
+    `-D warnings` and CI runs the workspace test suite.
+  - `docs/releasing.md`, the maintainer release runbook, including the manual
+    crates.io publish order (`eliciter-core` before `eliciter`).
+
 ### Changed
 
+- Release assets are no longer uploaded with per-asset checksums (taiki-e);
+  the release workflow now produces one combined `checksums.sha256` and a
+  `release-manifest.json`.
+- `server.json` names the OCI identifier with its version tag
+  (`ghcr.io/praxec/elicitation:0.0.1`); the OCI package carries no `version`
+  field.
 - Renamed the crates for the crates.io release: `elicitation-core` is now
   `eliciter-core` (library name `eliciter_core`) and `elicitation` is now
   `eliciter`. The installed binary is still named `elicitation`.
