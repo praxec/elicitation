@@ -8,7 +8,7 @@ use elicitation::{
     ElicitationServer, TOOL_APPEND, TOOL_NAMES, TOOL_QUESTION_NEXT, TOOL_READINESS_ASSESS,
     TOOL_SESSION_OPEN, TOOL_SPEC_EXPORT, TOOL_STATE_GET,
 };
-use elicitation_core::{Engine, FilesystemStore};
+use eliciter_core::{Engine, FilesystemStore};
 use rmcp::model::CallToolRequestParams;
 use serde_json::{Value, json};
 

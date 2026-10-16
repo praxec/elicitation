@@ -1,13 +1,13 @@
 # elicitation
 
-[![crates.io](https://img.shields.io/crates/v/elicitation.svg)](https://crates.io/crates/elicitation)
+[![crates.io](https://img.shields.io/crates/v/eliciter.svg)](https://crates.io/crates/eliciter)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](../../LICENSE)
 
-The stdio MCP server binary wrapping the [`elicitation-core`](../elicitation-core)
+The stdio MCP server binary wrapping the [`eliciter-core`](../elicitation-core)
 kernel — a deterministic, offline structured-discovery interview engine.
 
 ```sh
-cargo install elicitation
+cargo install eliciter
 ```
 
 ```jsonc

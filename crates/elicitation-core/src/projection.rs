@@ -131,20 +131,22 @@ pub(crate) fn raw_fold(events: &[Event]) -> RawFold {
 
 /// `qualify` mutates the targeted claim's scope so a contradiction dissolves.
 fn apply_qualify(fold: &mut RawFold, remediation: &RemediationEvent) {
-    if let RemediationMove::Qualify {
+    let RemediationMove::Qualify {
         claim,
         condition,
         time_scope,
     } = &remediation.r#move
-    {
-        if let Some(c) = fold.claims.iter_mut().find(|c| &c.id == claim) {
-            if let Some(cond) = condition {
-                c.condition = Some(cond.clone());
-            }
-            if let Some(ts) = time_scope {
-                c.time_scope = Some(ts.clone());
-            }
-        }
+    else {
+        return;
+    };
+    let Some(c) = fold.claims.iter_mut().find(|c| &c.id == claim) else {
+        return;
+    };
+    if let Some(cond) = condition {
+        c.condition = Some(cond.clone());
+    }
+    if let Some(ts) = time_scope {
+        c.time_scope = Some(ts.clone());
     }
 }
 

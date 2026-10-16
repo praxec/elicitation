@@ -4,7 +4,7 @@
 mod common;
 
 use common::{claim, temp_engine};
-use elicitation_core::{
+use eliciter_core::{
     Category, CoverageDimension, CoverageSchema, EvidenceEvent, EvidenceRef, EvidenceSourceType,
     Polarity, Priority, RemediationEvent, RemediationMove, RequirementMeta,
 };

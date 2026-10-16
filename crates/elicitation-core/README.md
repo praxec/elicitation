@@ -1,10 +1,10 @@
-# elicitation-core
+# eliciter-core
 
-[![crates.io](https://img.shields.io/crates/v/elicitation-core.svg)](https://crates.io/crates/elicitation-core)
-[![docs.rs](https://docs.rs/elicitation-core/badge.svg)](https://docs.rs/elicitation-core)
+[![crates.io](https://img.shields.io/crates/v/eliciter-core.svg)](https://crates.io/crates/eliciter-core)
+[![docs.rs](https://docs.rs/eliciter-core/badge.svg)](https://docs.rs/eliciter-core)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](../../LICENSE)
 
-The deterministic, offline kernel behind [`elicitation`](../../README.md) — a
+The deterministic, offline kernel behind [`eliciter`](../../README.md) — a
 structured-discovery interview engine modeled as a falsification-based alignment
 mechanism.
 
@@ -17,7 +17,7 @@ fuzzy matching — which is what makes the whole kernel golden-testable.
 
 ```rust
 use std::sync::Arc;
-use elicitation_core::{Engine, FilesystemStore};
+use eliciter_core::{Engine, FilesystemStore};
 
 let store = FilesystemStore::new("/tmp/elicitation")?;
 let engine = Engine::new(Arc::new(store));
@@ -26,10 +26,10 @@ let state = engine.open_session("design-review", None)?;
 // ... append claims/evidence ...
 let report = engine.readiness("design-review")?;
 println!("ready to plan? {}", report.ready);
-# Ok::<(), elicitation_core::EngineError>(())
+# Ok::<(), eliciter_core::EngineError>(())
 ```
 
-The MCP server façade lives in the `elicitation` crate; this crate has no MCP
+The MCP server façade lives in the `eliciter` crate; this crate has no MCP
 or network dependency. See the [root README](../../README.md) for the tool surface
 and [`docs/spec.md`](../../docs/spec.md) for the full design.
 

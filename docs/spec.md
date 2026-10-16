@@ -186,7 +186,7 @@ any guidance-only, prose-based readiness check with a deterministic call to `rea
 
 ## 7. Crate shape
 
-- `elicitation-core` — the deterministic kernel (data model, event-fold projections, detectors, readiness).
+- `eliciter-core` (`crates/elicitation-core`) — the deterministic kernel (data model, event-fold projections, detectors, readiness).
   No MCP, no I/O beyond the event-log store trait. Golden-tested.
 - `elicitation` — the MCP server (stdio) wrapping the kernel; binary `elicitation`.
 - `StateStore` trait (event-log append/replay) with a filesystem impl; `ResearchProvider` trait (future

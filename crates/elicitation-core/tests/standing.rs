@@ -4,7 +4,7 @@
 mod common;
 
 use common::{claim, temp_engine};
-use elicitation_core::{EvidenceEvent, EvidenceRef, EvidenceSourceType, HypothesisStanding};
+use eliciter_core::{EvidenceEvent, EvidenceRef, EvidenceSourceType, HypothesisStanding};
 
 fn evidence(session: &str, id: &str, claim_id: &str, st: EvidenceSourceType) -> EvidenceEvent {
     EvidenceEvent {
@@ -17,7 +17,7 @@ fn evidence(session: &str, id: &str, claim_id: &str, st: EvidenceSourceType) -> 
     }
 }
 
-fn standing_of(state: &elicitation_core::InterviewState, id: &str) -> HypothesisStanding {
+fn standing_of(state: &eliciter_core::InterviewState, id: &str) -> HypothesisStanding {
     state
         .claims
         .iter()
