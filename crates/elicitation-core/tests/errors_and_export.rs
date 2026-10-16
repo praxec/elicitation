@@ -3,7 +3,7 @@
 mod common;
 
 use common::{claim, temp_engine};
-use elicitation_core::{
+use eliciter_core::{
     Category, EngineError, EvidenceEvent, EvidenceRef, EvidenceSourceType, Object,
     RemediationEvent, RemediationMove, RequirementMeta,
 };

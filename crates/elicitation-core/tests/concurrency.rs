@@ -16,7 +16,7 @@ use std::sync::{Arc, Barrier};
 use std::thread;
 
 use common::{claim, temp_engine};
-use elicitation_core::EngineError;
+use eliciter_core::EngineError;
 
 /// N threads each add a claim with a DISTINCT id to the SAME session. All N
 /// must persist — none lost, no panic, replay shows exactly N.

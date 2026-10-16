@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use elicitation_core::{
+use eliciter_core::{
     Category, Claim, Engine, EntityRef, EvidenceRef, FilesystemStore, Modality, Object, Polarity,
 };
 
