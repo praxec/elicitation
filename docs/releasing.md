@@ -21,6 +21,9 @@ On a branch off `dev`, set the same version in the files that carry it:
 - `server.json`: the top-level `version` and the tag of the OCI identifier
   (`ghcr.io/praxec/elicitation:X.Y.Z`). The OCI package has no `version`
   field: the MCP registry rejects one.
+- `npm/package.json`: the `version` of the `@matthew-cochran/elicitation`
+  launcher. Its `files` list must keep `skills/` so the bundled agent skills
+  ship in the tarball.
 
 Then check them:
 
@@ -28,16 +31,12 @@ Then check them:
 sh scripts/check-version-sync.sh
 ```
 
-It fails when any `server.json` version or OCI identifier tag, or the
-`eliciter-core` dependency version, differs from the workspace `Cargo.toml`.
-The release workflow repeats the check against the tag
-(`scripts/check-version-sync.sh --tag vX.Y.Z`) and refuses to build on a
+It fails when any `server.json` version or OCI identifier tag, the
+`eliciter-core` dependency version, or the npm launcher version differs from
+the workspace `Cargo.toml`. The release workflow repeats the check against the
+tag (`scripts/check-version-sync.sh --tag vX.Y.Z`) and refuses to build on a
 mismatch. Nothing else needs a version bump: the README writes `<version>` for
 a release tag instead of pinning one.
-
-An npm launcher is planned but not part of the release yet. When `npm/` lands,
-add its `package.json` version here; `check-version-sync.sh` already checks it
-when the file is present.
 
 ## 2. Update the CHANGELOG
 
@@ -83,15 +82,22 @@ The workflow then runs these jobs:
    `tools/list`) and uploaded to the draft.
 3. **aggregate metadata + publish**: writes `checksums.sha256` and
    `release-manifest.json` (it fails if the matrix is incomplete), uploads them
-   with `install.sh` and `install.ps1`, and publishes the release. The
-   npm-launcher packing step is marked in the workflow but not wired up yet.
-4. **container image** (`.github/workflows/image.yml`): downloads the two
+   with `install.sh` and `install.ps1`, syncs the agent skills into `npm/` and
+   packs the launcher into `matthew-cochran-elicitation-X.Y.Z.tgz`, attaches the
+   tarball and its `npm-package.sha256` digest, and only then publishes the
+   release.
+4. **npm publish** (`npm` job): skipped unless the repository variable
+   `NPM_TRUSTED_PUBLISHING` is `true`. It downloads the attached tarball,
+   verifies its digest, publishes it over npm trusted publishing (GitHub OIDC,
+   no stored token), and verifies the published launcher reports `X.Y.Z`. See
+   step 7 for the one-time manual first publish.
+5. **container image** (`.github/workflows/image.yml`): downloads the two
    Linux release archives, checks them against `checksums.sha256` and builds
    the image from those binaries with `Dockerfile.release`, so nothing is
    compiled under emulation. It smoke-tests the amd64 image over MCP, then
    pushes `ghcr.io/praxec/elicitation` for linux/amd64 and linux/arm64
    with the tags `X.Y.Z`, `X.Y` and `latest`.
-5. **MCP registry**: publishes `server.json` as
+6. **MCP registry**: publishes `server.json` as
    `io.github.praxec/elicitation` with a pinned, checksum-verified
    `mcp-publisher` over GitHub OIDC. This job is best-effort
    (`continue-on-error`), so a failure does not fail the release; check its log.
@@ -99,7 +105,8 @@ The workflow then runs these jobs:
 ## 5. Verify the release
 
 Assets: the release page lists six archives, `checksums.sha256`,
-`release-manifest.json`, `install.sh` and `install.ps1`.
+`release-manifest.json`, `install.sh`, `install.ps1`, and — after step 3 packs
+it — `matthew-cochran-elicitation-X.Y.Z.tgz` with `npm-package.sha256`.
 
 ```sh
 gh release view vX.Y.Z --json assets --jq '.assets[].name'
@@ -148,6 +155,39 @@ must therefore already be live before `eliciter` is published. Until this step
 runs, crates.io keeps serving the previous versions. docs.rs builds the new
 versions on its own a few minutes after publishing.
 
+## 7. Publish to npm (manual first, then trusted publishing)
+
+The release workflow packs the launcher and attaches it to the GitHub release
+(step 3), but only publishes it to npm when the repository variable
+`NPM_TRUSTED_PUBLISHING` is `true`. The very first publish is manual so the
+package and its trusted publisher exist on npm. From the tagged commit, with
+`npm login` and `gh auth login` done:
+
+```sh
+git checkout vX.Y.Z
+bash scripts/npm-release.sh X.Y.Z
+```
+
+`scripts/npm-release.sh` refuses unless you are logged in to npm and the GitHub
+release `vX.Y.Z` exists and is not a draft, downloads the attached tarball,
+checks it against `npm-package.sha256` and that it contains only the launcher
+and bundled skills (including `package/skills/elicit-interview/SKILL.md`),
+publishes it with a 2FA OTP prompt (pre-releases go to the `next` dist-tag),
+and waits until the registry serves the version and `npx` reports
+`elicitation X.Y.Z`.
+
+After that first publish, register the trusted publisher on npmjs.com for
+`@matthew-cochran/elicitation` (organization `praxec`, repository
+`elicitation`, workflow `release.yml`, environment `npm`) and set the
+repository variable:
+
+```sh
+gh variable set NPM_TRUSTED_PUBLISHING --body true
+```
+
+Subsequent releases publish automatically from the `npm` job; the manual script
+remains the fallback and skips a version already on npm.
+
 ## Rollback
 
 - **A build failed before publishing.** The release is still a draft. Fix the
@@ -166,6 +206,10 @@ versions on its own a few minutes after publishing.
   release as a pre-release or edit its notes to warn users, then ship a fixed
   `X.Y.(Z+1)`. The installers resolve `releases/latest`, so they pick up the
   fix as soon as it is published.
+- **A bad npm version was published.** npm versions cannot be overwritten.
+  Unpublish it within 72 hours (`npm unpublish
+  @matthew-cochran/elicitation@X.Y.Z`) or, after that window, deprecate it
+  (`npm deprecate`) and ship a fixed `X.Y.(Z+1)`.
 - **A bad crate was published.** crates.io versions cannot be deleted or
   overwritten. Yank it so new lock files do not pick it up, then publish a fix:
 

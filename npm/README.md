@@ -14,8 +14,8 @@ at it (`{ "command": "npx", "args": ["-y", "@matthew-cochran/elicitation"] }`).
 The CLI also takes `--version`, `--help`, and
 `elicitation skills install --target <claude|codex|both> --dir <path>`.
 
-The package version matches the binary release version; `0.0.1` downloads
-`elicitation-<triple>` from the `v0.0.1` release.
+The package version matches the binary release version; `<version>` downloads
+`elicitation-<triple>` from the `v<version>` release.
 
 ## Environment variables
 

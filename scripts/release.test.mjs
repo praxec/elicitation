@@ -279,3 +279,225 @@ test('install.ps1 resolves the native windows/arm64 target', { skip: !hasPwsh },
   });
   assert.equal(r.stdout.trim(), 'aarch64-pc-windows-msvc');
 });
+
+// ---------------------------------------------------------------------------
+// release.yml: the npm launcher is packed with the bundled agent skills, the
+// tarball and its digest are attached, and publishing is gated on the
+// NPM_TRUSTED_PUBLISHING repository variable.
+// ---------------------------------------------------------------------------
+const REPO_ROOT = path.resolve(ROOT, '..');
+
+function releaseWorkflow() {
+  const py = 'import json, sys, yaml; json.dump(yaml.safe_load(open(sys.argv[1])), sys.stdout)';
+  const r = run('python3', ['-c', py, path.join(REPO_ROOT, '.github', 'workflows', 'release.yml')]);
+  assert.equal(r.status, 0, r.stderr);
+  return JSON.parse(r.stdout);
+}
+
+function stepRunning(workflow, job, needle) {
+  return workflow.jobs[job].steps.find((s) => typeof s.run === 'string' && s.run.includes(needle));
+}
+
+test('release.yml packs the npm launcher with the agent skills bundled', () => {
+  const step = stepRunning(releaseWorkflow(), 'finalize', 'sync-skills.js');
+  assert.match(step.run, /node npm\/lib\/sync-skills\.js[\s\S]*npm pack/);
+});
+
+test('release.yml names the npm tarball after the package and version', () => {
+  const step = stepRunning(releaseWorkflow(), 'finalize', 'npm pack');
+  assert.match(step.run, /tarball="matthew-cochran-elicitation-\$\{VERSION\}\.tgz"/);
+});
+
+test('release.yml verifies the bundled skill is inside the packed tarball', () => {
+  const step = stepRunning(releaseWorkflow(), 'finalize', 'npm pack');
+  assert.match(step.run, /package\/skills\/elicit-interview\/SKILL\.md/);
+});
+
+test('release.yml attaches the npm package digest to the release', () => {
+  const step = stepRunning(releaseWorkflow(), 'finalize', 'npm pack');
+  assert.match(step.run, /gh release upload[\s\S]*dist\/npm-package\.sha256/);
+});
+
+test('release.yml only runs the npm job when NPM_TRUSTED_PUBLISHING is true', () => {
+  assert.equal(releaseWorkflow().jobs.npm.if, "vars.NPM_TRUSTED_PUBLISHING == 'true'");
+});
+
+test('release.yml runs the npm job in the npm environment', () => {
+  assert.equal(releaseWorkflow().jobs.npm.environment, 'npm');
+});
+
+test('release.yml publishes the attached tarball through scripts/npm-publish.sh', () => {
+  const step = stepRunning(releaseWorkflow(), 'npm', 'npm-publish.sh');
+  assert.match(step.run, /matthew-cochran-elicitation-\$\{V\}\.tgz/);
+});
+
+// ---------------------------------------------------------------------------
+// npm-publish.sh: the tarball must hold the version being published, and
+// pre-releases go to the `next` dist-tag.
+// ---------------------------------------------------------------------------
+function fakeTarball(t, version) {
+  const work = tempDir(t);
+  const pkgDir = path.join(work, 'package');
+  fs.mkdirSync(pkgDir, { recursive: true });
+  fs.writeFileSync(path.join(pkgDir, 'package.json'), JSON.stringify({
+    name: '@matthew-cochran/elicitation',
+    version,
+  }));
+  const tarball = path.join(work, 'fake.tgz');
+  execFileSync('tar', ['-czf', tarball, '-C', work, 'package']);
+  return tarball;
+}
+
+function writeExe(file, body) {
+  fs.writeFileSync(file, `#!/usr/bin/env bash\n${body}\n`, { mode: 0o755 });
+}
+
+// A fake `npm` that records its publish arguments and reports nothing is on
+// the registry yet.
+function fakeNpm(t) {
+  const dir = tempDir(t);
+  const state = path.join(dir, 'state');
+  fs.mkdirSync(state);
+  writeExe(path.join(dir, 'npm'), `
+case "$1" in
+  view) exit 0 ;;
+  publish) shift; echo "$@" > "${state}/publish-args" ;;
+  *) exit 0 ;;
+esac`);
+  return { env: { PATH: `${dir}:${process.env.PATH}` }, state };
+}
+
+test('npm-publish.sh --dry-run refuses a tarball whose internal version differs from the argument', (t) => {
+  const tarball = fakeTarball(t, '1.2.3');
+  const r = run('bash', [path.join(ROOT, 'npm-publish.sh'), tarball, '9.9.9', '--dry-run']);
+  assert.equal(r.status, 1);
+});
+
+test('npm-publish.sh sends a pre-release to the next dist-tag', (t) => {
+  const tools = fakeNpm(t);
+  const tarball = fakeTarball(t, '1.2.3-rc.1');
+  run('bash', [path.join(ROOT, 'npm-publish.sh'), tarball, '1.2.3-rc.1'], { env: tools.env });
+  const args = fs.readFileSync(path.join(tools.state, 'publish-args'), 'utf8');
+  assert.match(args, /--tag next\s*$/);
+});
+
+// ---------------------------------------------------------------------------
+// npm-release.sh: the maintainer's manual publish of the release tarball.
+// Fake `npm`, `gh` and `npx` on PATH keep every test offline.
+// ---------------------------------------------------------------------------
+const RELEASE_VERSION = '9.8.7';
+
+// Builds a release asset dir holding the launcher tarball (with `files`) and
+// its npm-package.sha256, as release.yml's finalize job attaches them.
+function releaseAssets(t, { files, corruptDigest = false } = {}) {
+  const work = tempDir(t);
+  const pkgDir = path.join(work, 'package');
+  const entries = files ?? {
+    'package.json': JSON.stringify({ name: '@matthew-cochran/elicitation', version: RELEASE_VERSION }),
+    'LICENSE': 'Apache-2.0',
+    'bin/elicitation.js': '',
+    'skills/elicit-interview/SKILL.md': '---\nname: elicit-interview\n---\n',
+  };
+  for (const [rel, content] of Object.entries(entries)) {
+    fs.mkdirSync(path.dirname(path.join(pkgDir, rel)), { recursive: true });
+    fs.writeFileSync(path.join(pkgDir, rel), content);
+  }
+  const assets = path.join(work, 'assets');
+  fs.mkdirSync(assets);
+  const name = `matthew-cochran-elicitation-${RELEASE_VERSION}.tgz`;
+  // List files only: `npm pack` tarballs carry no directory entries.
+  const members = Object.keys(entries).map((rel) => `package/${rel}`);
+  execFileSync('tar', ['-czf', path.join(assets, name), '-C', work, ...members]);
+  const digest = corruptDigest ? '0'.repeat(64) : sha256(path.join(assets, name));
+  fs.writeFileSync(path.join(assets, 'npm-package.sha256'), `${digest}  ${name}\n`);
+  return assets;
+}
+
+// Fake CLIs. State lives in `state/`: `published` appears once `npm publish`
+// ran, and `publish-args` records its arguments.
+function fakeTools(t, { loggedIn = true, alreadyPublished = false, draft = 'false', assets } = {}) {
+  const dir = tempDir(t);
+  const state = path.join(dir, 'state');
+  fs.mkdirSync(state);
+  if (alreadyPublished) fs.writeFileSync(path.join(state, 'published'), '');
+  writeExe(path.join(dir, 'npm'), `
+case "$1" in
+  whoami) ${loggedIn ? 'echo maintainer' : 'exit 1'} ;;
+  view) [ -f "${state}/published" ] && echo "${RELEASE_VERSION}"; exit 0 ;;
+  publish) shift; echo "$@" > "${state}/publish-args"; touch "${state}/published" ;;
+  *) exit 0 ;;
+esac`);
+  writeExe(path.join(dir, 'gh'), `
+case "$1 $2" in
+  "release view") echo "${draft}" ;;
+  "release download")
+    while [ "$#" -gt 0 ]; do [ "$1" = "--dir" ] && dest="$2"; shift; done
+    cp "${assets ?? ''}"/* "$dest"/ ;;
+esac`);
+  writeExe(path.join(dir, 'npx'), `echo "elicitation ${RELEASE_VERSION}"`);
+  return { env: { PATH: `${dir}:${process.env.PATH}`, ELICITATION_RELEASE_WAIT_SECS: '5' }, state };
+}
+
+function runRelease(args, env) {
+  return run('bash', [path.join(ROOT, 'npm-release.sh'), ...args], { env });
+}
+
+test('npm-release.sh --help exits 0', () => {
+  assert.equal(runRelease(['--help']).status, 0);
+});
+
+test('npm-release.sh rejects an argument that is not a version with exit 64', () => {
+  assert.equal(runRelease(['latest']).status, 64);
+});
+
+test('npm-release.sh refuses to run when not logged in to npm', (t) => {
+  const tools = fakeTools(t, { loggedIn: false });
+  assert.equal(runRelease([RELEASE_VERSION], tools.env).status, 1);
+});
+
+test('npm-release.sh skips a version that is already on npm', (t) => {
+  const tools = fakeTools(t, { alreadyPublished: true });
+  assert.match(runRelease([RELEASE_VERSION], tools.env).stdout, /already on npm; nothing to publish/);
+});
+
+test('npm-release.sh refuses a GitHub release that is still a draft', (t) => {
+  const tools = fakeTools(t, { draft: 'true', assets: releaseAssets(t) });
+  assert.match(runRelease([RELEASE_VERSION], tools.env).stderr, /still a draft/);
+});
+
+test('npm-release.sh refuses a tarball whose digest does not match', (t) => {
+  const tools = fakeTools(t, { assets: releaseAssets(t, { corruptDigest: true }) });
+  assert.match(runRelease([RELEASE_VERSION], tools.env).stderr, /digest mismatch/);
+});
+
+test('npm-release.sh refuses a tarball holding an unexpected file', (t) => {
+  const assets = releaseAssets(t, {
+    files: {
+      'package.json': JSON.stringify({ version: RELEASE_VERSION }),
+      'skills/elicit-interview/SKILL.md': '',
+      'test/secret.test.mjs': '',
+    },
+  });
+  const tools = fakeTools(t, { assets });
+  assert.match(runRelease([RELEASE_VERSION], tools.env).stderr, /unexpected files/);
+});
+
+test('npm-release.sh refuses a tarball without the bundled agent skills', (t) => {
+  const assets = releaseAssets(t, {
+    files: { 'package.json': JSON.stringify({ version: RELEASE_VERSION }), 'LICENSE': '' },
+  });
+  const tools = fakeTools(t, { assets });
+  assert.match(runRelease([RELEASE_VERSION], tools.env).stderr, /does not bundle the agent skills/);
+});
+
+test('npm-release.sh publishes the verified release tarball publicly under latest', (t) => {
+  const tools = fakeTools(t, { assets: releaseAssets(t) });
+  runRelease([RELEASE_VERSION], tools.env);
+  const args = fs.readFileSync(path.join(tools.state, 'publish-args'), 'utf8');
+  assert.match(args, new RegExp(`matthew-cochran-elicitation-${RELEASE_VERSION}\\.tgz --access public --tag latest\\s*$`));
+});
+
+test('npm-release.sh exits 0 after the published launcher reports the release version', (t) => {
+  const tools = fakeTools(t, { assets: releaseAssets(t) });
+  assert.equal(runRelease([RELEASE_VERSION], tools.env).status, 0);
+});

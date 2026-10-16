@@ -6,6 +6,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-16
+
 ### Added
 
 - Optional, opt-in Jev assist layer behind the default-on `jev` cargo feature:
@@ -22,8 +24,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     Windows on x86_64 and ARM64, including `aarch64-pc-windows-msvc`),
     smoke-tests every packaged binary with `scripts/mcp-smoke.mjs`, and
     aggregates one combined `checksums.sha256` and `release-manifest.json` via
-    `scripts/release-manifest.sh` before publishing the draft release. The npm
-    launcher steps are left as a clearly marked placeholder.
+    `scripts/release-manifest.sh`, packs the npm launcher with the agent skills
+    bundled (attaching `matthew-cochran-elicitation-<version>.tgz` and
+    `npm-package.sha256`), and only then publishes the draft release. A separate
+    `npm` job publishes that exact tarball over trusted publishing when the
+    repository variable `NPM_TRUSTED_PUBLISHING` is `true`.
   - `.github/workflows/image.yml` builds `ghcr.io/praxec/elicitation` from the
     checksum-verified Linux release binaries with `Dockerfile.release`,
     smoke-tests the image over MCP, and publishes `server.json` to the MCP
@@ -93,4 +98,5 @@ Initial release.
   Callers must supply canonical, stable entity IDs and predicate tokens (and
   reuse the ones returned in the registry).
 
+[0.1.0]: https://github.com/praxec/elicitation/releases/tag/v0.1.0
 [0.0.1]: https://github.com/praxec/elicitation/releases/tag/v0.0.1

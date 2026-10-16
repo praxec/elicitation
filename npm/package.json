@@ -1,7 +1,7 @@
 {
   "name": "@matthew-cochran/elicitation",
-  "version": "0.0.1",
-  "description": "npx launcher for the elicitation MCP server: downloads the verified release binary for your platform and runs it over stdio.",
+  "version": "0.1.0",
+  "description": "npx launcher for the elicitation MCP server: downloads the verified release binary for your platform, runs it over stdio, and ships the elicitation agent skills.",
   "keywords": [
     "mcp",
     "model-context-protocol",
@@ -28,12 +28,15 @@
     "bin/elicitation.js",
     "lib/install.js",
     "lib/postinstall.js",
+    "lib/sync-skills.js",
+    "skills/",
     "README.md",
     "LICENSE",
     "NOTICE"
   ],
   "scripts": {
     "postinstall": "node lib/postinstall.js",
+    "prepack": "node lib/sync-skills.js",
     "test": "node --test test/*.test.mjs"
   },
   "engines": {
