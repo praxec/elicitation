@@ -1,6 +1,6 @@
 ---
 name: elicitation
-description: "Use when the elicitation MCP server is available and you need the tool map, the ELICITATION_STATE_DIR and session lifecycle, or the rules of the deterministic structured-discovery kernel. Covers the six tools (session.open, append, state.get, question.next, readiness.assess, spec.export), computed hypothesis standing, structural contradiction detection, and the append-only event log."
+description: "Use when requirements need a structured discovery interview with falsifiable claims and readiness before planning, and you need the tool map, the ELICITATION_STATE_DIR and session lifecycle, or the rules of the deterministic structured-discovery kernel. Covers the six tools (session.open, append, state.get, question.next, readiness.assess, spec.export), computed hypothesis standing, structural contradiction detection, and the append-only event log."
 ---
 
 # elicitation: the structured-discovery kernel
@@ -36,6 +36,23 @@ Everything that mutates is an append; everything that reads is a projection.
 Errors carry stable prefixes: `SESSION_NOT_FOUND`, `BAD_SESSION_ID`,
 `INVALID_CLAIM`, `INVALID_EVIDENCE`, `INVALID_REMEDIATION`, `CLAIM_NOT_FOUND`,
 `CONTRADICTION_NOT_FOUND`, `DUPLICATE_ID`, `STORE_ERROR`.
+
+## Calling the tools
+
+The tools are the same whichever way you reach them; the method names and
+arguments in this skill do not change.
+
+- **Registered MCP server.** When `elicitation` is registered with your agent
+  host, call the tools directly (`state.get session_id=<id>` with its arguments).
+- **Through a host wrapper.** When the server is not registered, a wrapper can
+  spawn the binary per call. With Junior, `junior tools call elicitation state.get
+  key=value ...` takes inline arguments (values parse as JSON),
+  `echo '{"tool":"state.get","arguments":{...}}' | junior tools call elicitation -`
+  reads the request from stdin, and `junior tools call elicitation request.json`
+  reads it from a file. Each call prints the bare result.
+
+Do not register a server just to follow this skill; use whichever route your
+host already has.
 
 ## Identity is canonical and caller-supplied
 

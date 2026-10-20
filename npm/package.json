@@ -1,6 +1,6 @@
 {
   "name": "@matthew-cochran/elicitation",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "npx launcher for the elicitation MCP server: downloads the verified release binary for your platform, runs it over stdio, and ships the elicitation agent skills.",
   "keywords": [
     "mcp",
