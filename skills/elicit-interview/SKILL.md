@@ -1,9 +1,12 @@
 ---
 name: elicit-interview
-description: "Use when you need to run a falsification-based discovery interview with the elicitation MCP server: open a session, capture requirements as hypotheses with canonical subject/predicate/object identity, gather user and code evidence (app_research_*), act on question.next, remediate contradictions, stop at readiness.assess ready, then spec.export."
+description: "Use when requirements need a structured discovery interview with falsifiable claims and readiness before planning: open a session, capture requirements as hypotheses with canonical subject/predicate/object identity, gather user and code evidence (app_research_*), act on question.next, remediate contradictions, stop at readiness.assess ready, then spec.export."
 ---
 
 # Running the elicitation interview
+
+Calling the tools: see [Calling the tools](../elicitation/SKILL.md#calling-the-tools)
+(registered MCP server or a host wrapper such as `junior tools call`).
 
 Use the [elicitation kernel](../elicitation/SKILL.md) to run a discovery
 interview as a **falsification loop**. You do not record facts; you record

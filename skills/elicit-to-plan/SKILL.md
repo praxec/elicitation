@@ -5,6 +5,9 @@ description: "Use when an elicitation spec.export has produced plan-ready requir
 
 # From an elicited spec to a cpm plan
 
+Calling the tools: see [Calling the tools](../elicitation/SKILL.md#calling-the-tools)
+(registered MCP server or a host wrapper such as `junior tools call`).
+
 Run the [elicit-interview method](../elicit-interview/SKILL.md) until
 `readiness.assess` reports `ready`, then call `spec.export`. Its output is the
 bridge: a list of requirement candidates (each with acceptance criteria,
