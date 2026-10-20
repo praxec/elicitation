@@ -6,6 +6,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-20
+
+### Changed
+
+- Agent skills trigger on discovery work and no longer assume a registered MCP server ([#12](https://github.com/praxec/elicitation/issues/12)): the `elicitation`, `elicit-interview` and `elicit-to-plan` descriptions now lead with structured requirements discovery and readiness before planning rather than server availability, and the elicitation skill documents **Calling the tools** — the same method names and arguments work through a registered MCP server or a host wrapper such as `junior tools call`, so following a skill does not require registering the server.
+
 ### Fixed
 
 - The `eliciter` crate packages its agent skills: `build.rs` prefers `crates/elicitation/skills` (copied in at publish time, git-ignored) over the repository-root `skills/`, and the crate's `include` list carries them; `docs/releasing.md` gives the copy-and-publish block. `eliciter` 0.1.0 on crates.io was published from this fix.
@@ -102,5 +108,6 @@ Initial release.
   Callers must supply canonical, stable entity IDs and predicate tokens (and
   reuse the ones returned in the registry).
 
+[0.1.1]: https://github.com/praxec/elicitation/releases/tag/v0.1.1
 [0.1.0]: https://github.com/praxec/elicitation/releases/tag/v0.1.0
 [0.0.1]: https://github.com/praxec/elicitation/releases/tag/v0.0.1
