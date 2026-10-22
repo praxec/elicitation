@@ -29,7 +29,7 @@ jev = ["dep:reqwest", "dep:async-trait"]
 test-fakes = ["jev"]
 
 [dependencies]
-eliciter-core = { path = "../elicitation-core", version = "0.1.1" }
+eliciter-core = { path = "../elicitation-core", version = "0.1.2" }
 anyhow = "1"
 async-trait = { version = "0.1", optional = true }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"], optional = true }

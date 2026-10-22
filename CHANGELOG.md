@@ -6,6 +6,18 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-10-22
+
+### Security
+
+- `rustls-webpki` 0.103.16 and `webpki-roots` 1.0.10 fix RUSTSEC-2026-0381 and
+  RUSTSEC-2026-0382 (distrusted emSign intermediates) in the shipped binaries.
+
+### Changed
+
+- Builds, CI, releases and the Docker builder use the pinned Rust 1.99.1
+  (`rust-toolchain.toml`).
+
 ## [0.1.1] - 2026-10-20
 
 ### Changed
@@ -108,6 +120,7 @@ Initial release.
   Callers must supply canonical, stable entity IDs and predicate tokens (and
   reuse the ones returned in the registry).
 
+[0.1.2]: https://github.com/praxec/elicitation/releases/tag/v0.1.2
 [0.1.1]: https://github.com/praxec/elicitation/releases/tag/v0.1.1
 [0.1.0]: https://github.com/praxec/elicitation/releases/tag/v0.1.0
 [0.0.1]: https://github.com/praxec/elicitation/releases/tag/v0.0.1
