@@ -187,3 +187,145 @@ fn malformed_args_are_invalid_params() {
     let err = call(&srv, TOOL_STATE_GET, json!({ "wrong": "x" })).unwrap_err();
     assert!(err.message.contains("invalid arguments"));
 }
+
+// #250 (matt-cochran/junior): a malformed `append` names every missing field at
+// once instead of serde's first miss.
+#[test]
+fn append_missing_fields_are_listed_together() {
+    let (srv, _d) = server();
+    call(&srv, TOOL_SESSION_OPEN, json!({ "session_id": "s1" })).unwrap();
+
+    let err = call(
+        &srv,
+        TOOL_APPEND,
+        json!({
+            "variant": "remediate",
+            "session_id": "s1",
+            "remediation": { "id": "r1", "session_id": "s1", "move": "accept" }
+        }),
+    )
+    .unwrap_err();
+    assert!(err.message.contains("missing fields"), "{}", err.message);
+    for f in [
+        "remediation.source",
+        "remediation.target",
+        "remediation.rationale",
+    ] {
+        assert!(err.message.contains(f), "{f} not in {}", err.message);
+    }
+
+    let err = call(
+        &srv,
+        TOOL_APPEND,
+        json!({
+            "variant": "add_claim",
+            "session_id": "s1",
+            "claim": {
+                "id": "c1", "subject": {}, "object": { "kind": "value" },
+                "source": {}
+            }
+        }),
+    )
+    .unwrap_err();
+    for f in [
+        "claim.session_id",
+        "claim.predicate",
+        "claim.polarity",
+        "claim.category",
+        "claim.modality",
+        "claim.subject.id",
+        "claim.object.value",
+        "claim.source.turn_id",
+    ] {
+        assert!(err.message.contains(f), "{f} not in {}", err.message);
+    }
+
+    let err = call(
+        &srv,
+        TOOL_APPEND,
+        json!({ "variant": "add_evidence", "session_id": "s1", "evidence": { "id": "e1" } }),
+    )
+    .unwrap_err();
+    for f in [
+        "evidence.session_id",
+        "evidence.claim_id",
+        "evidence.source_type",
+        "evidence.source",
+    ] {
+        assert!(err.message.contains(f), "{f} not in {}", err.message);
+    }
+
+    for (mv, fields) in [
+        ("supersede", vec!["remediation.old", "remediation.new"]),
+        ("retract", vec!["remediation.claim"]),
+        ("qualify", vec!["remediation.claim"]),
+        ("reconcile_by_evidence", vec!["remediation.contradiction"]),
+    ] {
+        let err = call(
+            &srv,
+            TOOL_APPEND,
+            json!({
+                "variant": "remediate",
+                "session_id": "s1",
+                "remediation": {
+                    "id": "r", "session_id": "s1", "move": mv,
+                    "source": { "turn_id": "t" }
+                }
+            }),
+        )
+        .unwrap_err();
+        for f in fields {
+            assert!(err.message.contains(f), "{mv}: {f} not in {}", err.message);
+        }
+    }
+
+    let err = call(&srv, TOOL_APPEND, json!({ "variant": "remediate" })).unwrap_err();
+    assert!(err.message.contains("session_id") && err.message.contains("remediation"));
+}
+
+// #250: `qualify` scopes one claim. A pair contradiction dissolves only once
+// both claims carry different conditions, so one qualify leaves it standing.
+#[test]
+fn qualify_scopes_one_claim_and_pair_clears_when_both_are_scoped() {
+    let (srv, _d) = server();
+    call(&srv, TOOL_SESSION_OPEN, json!({ "session_id": "s1" })).unwrap();
+    for (id, obj) in [("c1", "oauth"), ("c3", "saml")] {
+        call(
+            &srv,
+            TOOL_APPEND,
+            json!({
+                "variant": "add_claim",
+                "session_id": "s1",
+                "claim": {
+                    "id": id, "session_id": "s1",
+                    "subject": { "id": "e:app" }, "predicate": "auth",
+                    "object": { "kind": "value", "value": obj },
+                    "polarity": "positive", "category": "requirement", "modality": "goal",
+                    "source": { "turn_id": "t1" }
+                }
+            }),
+        )
+        .unwrap();
+    }
+    let qualify = |rid: &str, claim: &str, cond: &str| {
+        json!({
+            "variant": "remediate",
+            "session_id": "s1",
+            "remediation": {
+                "id": rid, "session_id": "s1", "move": "qualify",
+                "claim": claim, "condition": cond,
+                "source": { "turn_id": "t2" }
+            }
+        })
+    };
+    let contradicted = |st: &Value| {
+        st["contradictions"]
+            .as_array()
+            .map(|a| a.iter().any(|c| c["kind"] == "intra_spec"))
+            .unwrap_or(false)
+    };
+    let st = call(&srv, TOOL_APPEND, qualify("q1", "c1", "internal users")).unwrap();
+    assert!(contradicted(&st), "one qualify must leave the pair: {st}");
+    let st = call(&srv, TOOL_APPEND, qualify("q2", "c3", "partner users")).unwrap();
+    assert!(!contradicted(&st), "both qualified must clear it: {st}");
+}

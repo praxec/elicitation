@@ -6,6 +6,23 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- A malformed `append` lists every missing required field in one error
+  (`invalid arguments: missing fields: remediation.target, remediation.rationale`),
+  for each variant and remediation `move`. Before, serde reported one field per
+  call (matt-cochran/junior#250).
+
+### Documentation
+
+- The `elicitation` skill shows one complete payload for each `append` variant,
+  lists the fields each remediation `move` needs, and names the valid
+  `category` and `modality` values. An assumption is `modality: "assumption"`,
+  not a category.
+- `qualify` is documented as scoping one claim: a pair contradiction clears
+  only when both claims carry different conditions. A test covers this
+  (matt-cochran/junior#250).
+
 ## [0.1.2] - 2026-10-22
 
 ### Security

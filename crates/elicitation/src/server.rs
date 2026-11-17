@@ -343,6 +343,13 @@ impl ElicitationServer {
     }
 
     fn handle_append(&self, args: Value) -> Result<Value, McpError> {
+        let missing = append_missing_fields(&args);
+        if !missing.is_empty() {
+            return Err(McpError::invalid_params(
+                format!("invalid arguments: missing fields: {}", missing.join(", ")),
+                None,
+            ));
+        }
         let parsed: AppendArgs = parse_args(args)?;
         let state = match parsed {
             AppendArgs::AddClaim {
@@ -464,6 +471,99 @@ impl ServerHandler for ElicitationServer {
 fn parse_args<T: serde::de::DeserializeOwned>(args: Value) -> Result<T, McpError> {
     serde_json::from_value(args)
         .map_err(|e| McpError::invalid_params(format!("invalid arguments: {e}"), None))
+}
+
+/// List every required `append` field missing from `args` (dotted paths), so a
+/// caller sees the whole shape in one error instead of serde's first miss.
+/// Only presence is checked here; types and enum values are left to serde and
+/// the kernel. An unknown `variant` or `move` adds nothing (serde reports it).
+fn append_missing_fields(args: &Value) -> Vec<String> {
+    fn need(obj: &Value, prefix: &str, keys: &[&str], out: &mut Vec<String>) {
+        for k in keys {
+            if obj.get(*k).is_none_or(Value::is_null) {
+                out.push(if prefix.is_empty() {
+                    (*k).to_string()
+                } else {
+                    format!("{prefix}.{k}")
+                });
+            }
+        }
+    }
+    fn need_source(parent: &Value, prefix: &str, out: &mut Vec<String>) {
+        if let Some(s) = parent.get("source").filter(|v| v.is_object()) {
+            need(s, &format!("{prefix}.source"), &["turn_id"], out);
+        }
+    }
+    let mut out = Vec::new();
+    need(args, "", &["variant", "session_id"], &mut out);
+    match args.get("variant").and_then(Value::as_str) {
+        Some("add_claim") => match args.get("claim") {
+            Some(c) if c.is_object() => {
+                need(
+                    c,
+                    "claim",
+                    &[
+                        "id",
+                        "session_id",
+                        "subject",
+                        "predicate",
+                        "object",
+                        "polarity",
+                        "category",
+                        "modality",
+                        "source",
+                    ],
+                    &mut out,
+                );
+                if let Some(s) = c.get("subject").filter(|v| v.is_object()) {
+                    need(s, "claim.subject", &["id"], &mut out);
+                }
+                if let Some(o) = c.get("object").filter(|v| v.is_object()) {
+                    match o.get("kind").and_then(Value::as_str) {
+                        Some("entity") => need(o, "claim.object", &["id"], &mut out),
+                        Some("value") => need(o, "claim.object", &["value"], &mut out),
+                        _ => need(o, "claim.object", &["kind"], &mut out),
+                    }
+                }
+                need_source(c, "claim", &mut out);
+            }
+            _ => out.push("claim".to_string()),
+        },
+        Some("add_evidence") => match args.get("evidence") {
+            Some(e) if e.is_object() => {
+                need(
+                    e,
+                    "evidence",
+                    &["id", "session_id", "claim_id", "source_type", "source"],
+                    &mut out,
+                );
+                need_source(e, "evidence", &mut out);
+            }
+            _ => out.push("evidence".to_string()),
+        },
+        Some("remediate") => match args.get("remediation") {
+            Some(r) if r.is_object() => {
+                need(
+                    r,
+                    "remediation",
+                    &["id", "session_id", "move", "source"],
+                    &mut out,
+                );
+                need_source(r, "remediation", &mut out);
+                let move_keys: &[&str] = match r.get("move").and_then(Value::as_str) {
+                    Some("supersede") => &["old", "new"],
+                    Some("retract") | Some("qualify") => &["claim"],
+                    Some("reconcile_by_evidence") => &["contradiction"],
+                    Some("accept") => &["target", "rationale"],
+                    _ => &[],
+                };
+                need(r, "remediation", move_keys, &mut out);
+            }
+            _ => out.push("remediation".to_string()),
+        },
+        _ => {}
+    }
+    out
 }
 
 fn to_value<T: Serialize>(value: &T) -> Result<Value, McpError> {
