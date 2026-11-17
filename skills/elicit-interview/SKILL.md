@@ -38,7 +38,10 @@ which `readiness.assess` decides.
    - `supersede` — a better claim replaces the old one;
    - `retract` — withdraw a hypothesis the user retracts;
    - `qualify` — both claims hold under different conditions (`condition` /
-     `time_scope`);
+     `time_scope`). A `qualify` scopes **one** claim. A pair contradiction
+     dissolves only when **both** claims carry a condition (or time scope) and
+     the two differ, so append one `qualify` per claim. An unscoped claim
+     overlaps every scope;
    - `reconcile_by_evidence` — the "fix the system" path: change the app, then
      submit `app_research_support`; the contradiction clears on rerun;
    - `accept` — take a stance; contradicting claims become `challenged` with a

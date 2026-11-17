@@ -95,6 +95,73 @@ Sessions are isolated by `session_id`; every tool call carries one.
 5. **`readiness.assess`** when the signals quiet down; when `ready` is true,
    call **`spec.export`** for the plan-ready document.
 
+## `append` payloads
+
+Every `append` names a `variant` and a `session_id`. The examples below show
+every required field, and optional fields are marked. If a call is missing
+fields, the error lists all of them at once (`invalid arguments: missing
+fields: remediation.target, remediation.rationale, ...`).
+
+`add_claim` (`requirement` is optional and adds acceptance criteria, an owner
+and a priority to a `must`):
+
+```json
+{"variant": "add_claim", "session_id": "s1",
+ "claim": {"id": "c1", "session_id": "s1",
+   "subject": {"id": "e:app"}, "predicate": "auth",
+   "object": {"kind": "value", "value": "oauth"},
+   "polarity": "positive", "category": "requirement", "modality": "goal",
+   "dimensions": ["constraints"], "source": {"turn_id": "t1"}},
+ "requirement": {"statement": "Sign in with OAuth", "acceptance_criteria": ["..."],
+   "owner": "platform", "priority": "must"}}
+```
+
+- `object` is `{"kind": "value", "value": "..."}` or `{"kind": "entity", "id": "e:..."}`.
+- `polarity` is `positive` or `negative`.
+- `category` is `requirement`, `constraint`, `risk`, `context` or `decision`.
+  There is no `assumption` category. An assumption is expressed through
+  `modality: "assumption"` with the category that fits it, usually `context`.
+- `modality` is `fact`, `goal`, `constraint`, `assumption`, `decision`, `risk`
+  or `preference`.
+- `condition` and `time_scope` (`{"condition": "..."}`) are optional. Setting
+  them scopes the claim, as `qualify` does.
+
+`add_evidence` (`source_type` is `user_assent`, `user_refutation`,
+`corroboration`, `app_research_support` or `app_research_refutation`; `detail` is
+optional):
+
+```json
+{"variant": "add_evidence", "session_id": "s1",
+ "evidence": {"id": "e1", "session_id": "s1", "claim_id": "c1",
+   "source_type": "app_research_support", "detail": "src/auth.ts uses OAuth",
+   "source": {"turn_id": "t2"}}}
+```
+
+`remediate`: the envelope is `id`, `session_id`, `move`, `source` and an optional
+`detail`. `move` is a bare name, not an object, and the fields that move needs
+sit beside it:
+
+| `move` | Its fields |
+|---|---|
+| `supersede` | `old`, `new` (claim ids) |
+| `retract` | `claim` |
+| `qualify` | `claim`, plus `condition` and/or `time_scope` |
+| `reconcile_by_evidence` | `contradiction` (the contradiction id) |
+| `accept` | `target` (the governing claim), `rationale` |
+
+```json
+{"variant": "remediate", "session_id": "s1",
+ "remediation": {"id": "r1", "session_id": "s1", "move": "qualify",
+   "claim": "c1", "condition": "internal users", "source": {"turn_id": "t3"}}}
+```
+
+`qualify` scopes one claim. An `intra_spec` contradiction between two claims
+clears only when both carry a condition (or time scope) and the two differ. An
+unscoped claim overlaps every scope, so qualifying one side of the pair leaves
+the contradiction standing. Append a second `qualify` for the other claim, or
+use `supersede` or `accept` if the claims do not really hold under different
+conditions.
+
 Readiness is honest by construction: it reports that the spec *survived
 falsification*, never that it is true.
 
