@@ -6,6 +6,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-11-17
+
 ### Security
 
 - rmcp goes from 1.8 to 3.10 (RUSTSEC-2026-0462, unbounded response buffering
@@ -145,6 +147,7 @@ Initial release.
   Callers must supply canonical, stable entity IDs and predicate tokens (and
   reuse the ones returned in the registry).
 
+[0.1.3]: https://github.com/praxec/elicitation/releases/tag/v0.1.3
 [0.1.2]: https://github.com/praxec/elicitation/releases/tag/v0.1.2
 [0.1.1]: https://github.com/praxec/elicitation/releases/tag/v0.1.1
 [0.1.0]: https://github.com/praxec/elicitation/releases/tag/v0.1.0
