@@ -6,6 +6,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Security
+
+- rmcp goes from 1.8 to 3.10 (RUSTSEC-2026-0462, unbounded response buffering
+  in Streamable HTTP clients) and tokio from 1.52.3 to 1.54.1 (RUSTSEC-2026-0386,
+  `AsyncFd` I/O-safety unsoundness). Elicitation uses only the stdio server
+  transport. The migration is `call_tool` returning `CallToolResponse` and
+  `ServerInfo` becoming `ServerConfig`. The MCP stdio smoke test passes (6 tools).
+
 ### Fixed
 
 - A malformed `append` lists every missing required field in one error
